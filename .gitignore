@@ -1,0 +1,30 @@
+# ---- 临时测试脚本（按要求不提交） ---- #
+*.py
+*.pyc
+__pycache__/
+*.bat
+*.ahk
+*.dat
+*.log
+*.png
+*.jpg
+*.tmp
+
+# ---- Rust 构建产物 ---- #
+target/
+src-tauri/target/
+src-tauri/gen/
+**/*.rs.bk
+
+# ---- 前端产物 (如有) ---- #
+node_modules/
+dist/
+.vite/
+
+# ---- 操作系统与编辑器临时文件 ---- #
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
