@@ -1,6 +1,6 @@
 [package]
 name = "autotappo"
-version = "0.2.0"
+version = "0.3.0"
 description = "《鸣潮》官方桌宠 WuwaTappo 智能后台挂机助手"
 authors = ["AutoTappo"]
 edition = "2021"
@@ -11,11 +11,24 @@ rust-version = "1.77"
 name = "AutoTappo"
 path = "src/main.rs"
 
+# 库目标：供集成测试 (tests/bdd_*.rs) 复用核心模块
+[lib]
+name = "autotappo"
+path = "src/lib.rs"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["tray-icon", "image-png"] }
+# 体积优化：default-features 关闭 compression/dynamic-acl/x11/dbus，
+# 仅保留 wry(WebView2) + custom-protocol(release 资源服务) + 托盘 + 图标解码 + 托盘菜单现代主题
+tauri = { version = "2", default-features = false, features = [
+    "wry",
+    "custom-protocol",
+    "tray-icon",
+    "image-png",
+    "common-controls-v6",
+] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rand = "0.8"
@@ -28,6 +41,8 @@ windows = { version = "0.62", features = [
 ] }
 
 [profile.release]
+# 体积优化组合：s 级优化（用户反馈 z 级有可感卡顿，回退保交互性能；体积大头来自 tauri features 精简）
+# + fat LTO + 单编译单元 + 全量剥离 + panic 中止
 opt-level = "s"
 lto = true
 codegen-units = 1

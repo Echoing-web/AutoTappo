@@ -83,8 +83,6 @@ pub fn minimize_to_tray(app: AppHandle) {
 #[tauri::command]
 pub fn quit_app(state: State<'_, AppState>, app: AppHandle) {
     let inner = &state.0;
-    inner.shutting_down.store(true, Ordering::SeqCst);
-    inner.clicker.shutdown.store(true, Ordering::SeqCst);
-    inner.box_opener.shutdown.store(true, Ordering::SeqCst);
+    crate::request_shutdown(inner);
     app.exit(0);
 }

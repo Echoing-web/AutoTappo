@@ -1,30 +1,13 @@
 // Release 发布版禁用 Windows 控制台黑框
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod box_opener;
-mod clicker;
-mod commands;
-mod tray;
-mod window;
-
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
-use tauri::tray::TrayIcon;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
 use tauri::Manager;
 
-use crate::box_opener::BoxOpenerController;
-use crate::clicker::ClickerController;
-
-/// 全局共享状态
-pub struct Inner {
-    pub clicker: Arc<ClickerController>,
-    pub box_opener: Arc<BoxOpenerController>,
-    pub tray: Mutex<Option<TrayIcon>>,
-    pub tray_ok: AtomicBool,
-    pub shutting_down: AtomicBool,
-}
-
-pub struct AppState(pub Arc<Inner>);
+use autotappo::box_opener::BoxOpenerController;
+use autotappo::clicker::ClickerController;
+use autotappo::{AppState, Inner};
 
 fn main() {
     let app = tauri::Builder::default()
@@ -40,14 +23,13 @@ fn main() {
             let inner = Arc::new(Inner {
                 clicker,
                 box_opener,
-                tray: Mutex::new(None),
-                tray_ok: AtomicBool::new(false),
-                shutting_down: AtomicBool::new(false),
-            });
-            app.manage(AppState(Arc::clone(&inner)));
+                tray: std::sync::Mutex::new(None),
+                tray_ok: std::sync::atomic::AtomicBool::new(false),
+                shutting_down: std::sync::atomic::AtomicBool::new(false),
+            });            app.manage(AppState(Arc::clone(&inner)));
 
             // 构造系统托盘图标
-            match tray::build(app, Arc::clone(&inner)) {
+            match autotappo::tray::build(app, Arc::clone(&inner)) {
                 Ok(icon) => {
                     if let Ok(mut slot) = inner.tray.lock() {
                         *slot = Some(icon);
@@ -60,7 +42,7 @@ fn main() {
             }
 
             // 启动时默认打开主控制面板窗口
-            let _ = window::ensure(app.handle());
+            let _ = autotappo::window::ensure(app.handle());
 
             Ok(())
         })
@@ -72,25 +54,24 @@ fn main() {
                     // 点击右上角关闭：不退出程序，直接销毁窗口释放 WebView2 渲染内存
                     // 托盘图标依然常驻，点击托盘可随时秒级重新唤醒
                     api.prevent_close();
-                    let _ = window::close(app);
+                    let _ = autotappo::window::close(app);
                 }
             }
         })
         .invoke_handler(tauri::generate_handler![
-            commands::get_status,
-            commands::toggle_running,
-            commands::set_running,
-            commands::set_speed,
-            commands::set_hotkey,
-            commands::get_hotkey,
-            commands::reset_sent_count,
-            commands::set_auto_box,
-            commands::minimize_to_tray,
-            commands::quit_app,
+            autotappo::commands::get_status,
+            autotappo::commands::toggle_running,
+            autotappo::commands::set_running,
+            autotappo::commands::set_speed,
+            autotappo::commands::set_hotkey,
+            autotappo::commands::get_hotkey,
+            autotappo::commands::reset_sent_count,
+            autotappo::commands::set_auto_box,
+            autotappo::commands::minimize_to_tray,
+            autotappo::commands::quit_app,
         ])
         .build(tauri::generate_context!())
         .expect("AutoTappo 启动失败");
-
     app.run(|handle, event| {
         // 关闭主窗口后窗口数为 0，Tauri 默认会请求退出。
         // 托盘常驻守护时必须拦住；只有用户在托盘菜单真正点击「退出」时才放行。

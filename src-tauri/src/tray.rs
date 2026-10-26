@@ -33,8 +33,7 @@ pub fn build(app: &tauri::App, inner: Arc<Inner>) -> tauri::Result<TrayIcon> {
                 println!("[Tray] 切换运行状态: {}", if !prev { "运行中" } else { "已暂停" });
             }
             "quit" => {
-                inner_for_menu.shutting_down.store(true, Ordering::SeqCst);
-                inner_for_menu.clicker.shutdown.store(true, Ordering::SeqCst);
+                crate::request_shutdown(&inner_for_menu);
                 app.exit(0);
             }
             _ => {}
