@@ -5,8 +5,8 @@
 
 use autotappo::box_logic::{
     countdown_wait_ms, decide, parse_countdown_text, Decision, Phase, ScanOutcome,
-    ANIMATING_WAIT_MS, BACKOFF_MS, COUNTDOWN_CAP_MS, MIN_SCAN_GAP_MS, SLOW_POLL_MS,
-    VERIFY_DELAY_MS, WAKE_GRACE_MS,
+    ANIMATING_WAIT_MS, BACKOFF_MS, CHAIN_CHECK_MS, COUNTDOWN_CAP_MS, MIN_SCAN_GAP_MS,
+    NO_CHEST_POLL_MS, VERIFY_DELAY_MS, WAKE_GRACE_MS,
 };
 
 // ---------------- 倒计时文本解析（读取桌宠 reward-countdown 的 aria-label） ----------------
@@ -126,12 +126,13 @@ fn given_watching_and_mid_length_countdown_when_decided_then_resyncs_in_chunks()
 }
 
 #[test]
-fn given_watching_and_nothing_visible_when_decided_then_slow_polls() {
-    // Given 监测中但未登录 / 桌宠未运行 / 倒计时未展示
+fn given_watching_and_nothing_visible_when_decided_then_rescans_at_liveness_interval() {
+    // Given 监测中但未登录 / 倒计时未展示（树存活但无宝箱 UI）
     // When 决策
     let d = decide(Phase::Watching, ScanOutcome::Nothing, 0);
-    // Then 每 60 秒慢轮询一次，把空闲 CPU 占用压到最低
-    assert_eq!(d.next_scan_in_ms, SLOW_POLL_MS);
+    // Then 每 8 秒重扫一次——兼作 Chromium 无障碍树保活（长间隔会让树休眠关闭，
+    //      实机教训：60 秒慢轮询曾导致就绪宝箱永远读不到，详见 SPEC.md §3）
+    assert_eq!(d.next_scan_in_ms, NO_CHEST_POLL_MS);
     assert!(!d.claim);
 }
 
@@ -177,16 +178,17 @@ fn given_pending_verify_and_second_slot_ready_when_decided_then_chains_next_clai
 }
 
 #[test]
-fn given_pending_verify_and_slot_moved_to_countdown_when_decided_then_confirms_success() {
+fn given_pending_verify_and_slot_moved_to_countdown_when_decided_then_confirms_success_with_chain_check() {
     // Given 复查时按钮已被倒计时气泡取代（领取成功、下一轮 30 分钟计时开始，剩 300 秒）
     // When 决策
     let phase = Phase::PendingVerify { attempted_at_ms: 1_000, ready_seen: 1 };
     let d = decide(phase, ScanOutcome::Countdown(300), 5_000);
-    // Then 确认成功，转入监测阶段并按新倒计时精准休眠
+    // Then 确认成功，转入监测阶段；但 8 秒后先做一次链式复查——
+    //      双槽就绪时第二箱要立即连开（实机教训：曾按 30 分钟倒计时休眠漏开第二箱）
     assert!(!d.claim);
     assert_eq!(d.opens_delta, 0);
     assert_eq!(d.next_phase, Phase::Watching);
-    assert_eq!(d.next_scan_in_ms, 300_000 + WAKE_GRACE_MS);
+    assert_eq!(d.next_scan_in_ms, CHAIN_CHECK_MS);
 }
 
 #[test]
@@ -198,12 +200,12 @@ fn given_pending_verify_and_nothing_when_decided_then_confirms_success_and_slow_
     // Then 视为领取成功，转慢轮询
     assert_eq!(d.opens_delta, 0);
     assert_eq!(d.next_phase, Phase::Watching);
-    assert_eq!(d.next_scan_in_ms, SLOW_POLL_MS);
+    assert_eq!(d.next_scan_in_ms, NO_CHEST_POLL_MS);
 }
 
 #[test]
 fn given_pending_verify_and_still_animating_when_decided_then_waits_patiently() {
-    // Given 复查时按钮仍在开箱动画中
+    // Given 复查时按钮仍在开箱动画中（未超时）
     // When 决策
     let phase = Phase::PendingVerify { attempted_at_ms: 1_000, ready_seen: 1 };
     let d = decide(phase, ScanOutcome::Animating, 5_000);
@@ -212,6 +214,19 @@ fn given_pending_verify_and_still_animating_when_decided_then_waits_patiently() 
     assert_eq!(d.opens_delta, 0);
     assert_eq!(d.next_phase, phase);
     assert_eq!(d.next_scan_in_ms, ANIMATING_WAIT_MS);
+}
+
+#[test]
+fn given_pending_verify_animating_beyond_deadline_when_decided_then_rolls_back_and_backs_off() {
+    // Given 按钮持续停留在动画态超过 30 秒确认时限（桌宠卡死等异常）
+    // When 决策
+    let phase = Phase::PendingVerify { attempted_at_ms: 1_000, ready_seen: 1 };
+    let d = decide(phase, ScanOutcome::Animating, 40_000);
+    // Then 强制回滚计数并进入冷却，杜绝永久悬挂
+    assert!(!d.claim);
+    assert_eq!(d.opens_delta, -1);
+    assert_eq!(d.next_phase, Phase::BackoffUntil { until_ms: 40_000 + BACKOFF_MS });
+    assert_eq!(d.next_scan_in_ms, BACKOFF_MS);
 }
 
 // ---------------- 决策状态机：冷却阶段 ----------------
@@ -249,11 +264,11 @@ fn given_backoff_expired_and_countdown_when_decided_then_returns_to_watching() {
     // When 决策
     let phase = Phase::BackoffUntil { until_ms: 100_000 };
     let d = decide(phase, ScanOutcome::Countdown(120), 100_000);
-    // Then 回到监测阶段，按倒计时精准唤醒
+    // Then 回到监测阶段，8 秒链式复查后按倒计时精准唤醒
     assert!(!d.claim);
     assert_eq!(d.opens_delta, 0);
     assert_eq!(d.next_phase, Phase::Watching);
-    assert_eq!(d.next_scan_in_ms, 120_000 + WAKE_GRACE_MS);
+    assert_eq!(d.next_scan_in_ms, CHAIN_CHECK_MS);
 }
 
 // ---------------- 防御性边界 ----------------
@@ -265,5 +280,5 @@ fn given_zero_ready_count_when_decided_then_treated_as_nothing() {
     let d = decide(Phase::Watching, ScanOutcome::Ready(0), 0);
     // Then 等同于 Nothing，慢轮询，绝不发起无意义领取
     assert!(!d.claim);
-    assert_eq!(d.next_scan_in_ms, SLOW_POLL_MS);
+    assert_eq!(d.next_scan_in_ms, NO_CHEST_POLL_MS);
 }

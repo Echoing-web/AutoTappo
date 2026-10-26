@@ -5,8 +5,16 @@
 //! 1. 宝箱状态自动检测——读取桌宠倒计时气泡 aria-label，精准定时唤醒，就绪后 ~1 秒内领取；
 //! 2. 低 CPU——用「读倒计时 → 长休眠」替代高频盲轮询，空闲时最多 60 秒一次扫描。
 
-/// 无任何宝箱 UI 可见时的慢轮询间隔（未登录 / 桌宠未运行 / 倒计时未展示）
-pub const SLOW_POLL_MS: u64 = 60_000;
+/// 领取确认成功后的链式复查间隔：双槽就绪时第二箱应在 ~10 秒内被连续领取，
+/// 而不是按新倒计时休眠 30 分钟（否则同周期第二箱要等到下下轮才被开掉）
+pub const CHAIN_CHECK_MS: u64 = 8_000;
+/// 无宝箱 UI（树存活但无槽位）时的常规重扫间隔。
+/// 8 秒 < Chromium 无障碍树空闲自动关闭阈值——常规查询同时兼任树保活。
+/// （实机教训：60 秒慢轮询会让桌宠 WebView 的 UIA 树休眠关闭，导致后续扫描读到空树、
+///   就绪宝箱永远领不到，详见 SPEC.md §3 根因记录。）
+pub const NO_CHEST_POLL_MS: u64 = 8_000;
+/// 树死亡（ping 不到任何按钮）时的快速重试间隔：查询本身会触发 Chromium 重建无障碍树
+pub const TREE_WAKE_RETRY_MS: u64 = 3_000;
 /// 倒计时唤醒的最大休眠上限：超过则重新读取倒计时校准（防文本停更 / 系统休眠时钟漂移）
 pub const COUNTDOWN_CAP_MS: u64 = 600_000;
 /// 按钮处于开箱动画（--press/--open）时的让位等待
@@ -15,6 +23,8 @@ pub const ANIMATING_WAIT_MS: u64 = 2_500;
 pub const VERIFY_DELAY_MS: u64 = 3_500;
 /// 领取未生效（点数不足 / 未登录）后的冷却期，避免在桌宠侧刷错误气泡
 pub const BACKOFF_MS: u64 = 5 * 60 * 1000;
+/// 待确认阶段超时：按钮持续停留在动画态（桌宠卡死等异常）时强制回滚，防止永久悬挂
+pub const VERIFY_DEADLINE_MS: u64 = 30_000;
 /// 倒计时文本为向上取整秒数，唤醒额外宽限，确保按钮已真正出现
 pub const WAKE_GRACE_MS: u64 = 600;
 /// 任何相邻两次扫描的最小间隔，杜绝高频空转
@@ -105,13 +115,11 @@ pub fn decide(phase: Phase, scan: ScanOutcome, now_ms: u64) -> Decision {
                 next_scan_in_ms: VERIFY_DELAY_MS,
             },
             ScanOutcome::Countdown(s) => wait_decision(Phase::Watching, countdown_wait_ms(s)),
-            ScanOutcome::Animating => {
-                wait_decision(Phase::Watching, ANIMATING_WAIT_MS)
-            }
-            ScanOutcome::Nothing => wait_decision(Phase::Watching, SLOW_POLL_MS),
+            ScanOutcome::Animating => wait_decision(Phase::Watching, ANIMATING_WAIT_MS),
+            ScanOutcome::Nothing => wait_decision(Phase::Watching, NO_CHEST_POLL_MS),
         },
 
-        Phase::PendingVerify { attempted_at_ms: _, ready_seen } => match scan {
+        Phase::PendingVerify { attempted_at_ms, ready_seen } => match scan {
             // 就绪按钮数量减少 → 上一箱已入袋；仍有剩 → 链式领取下一个
             ScanOutcome::Ready(m) if m < ready_seen => Decision {
                 claim: true,
@@ -126,11 +134,22 @@ pub fn decide(phase: Phase, scan: ScanOutcome, now_ms: u64) -> Decision {
                 next_phase: Phase::BackoffUntil { until_ms: now_ms + BACKOFF_MS },
                 next_scan_in_ms: BACKOFF_MS,
             },
-            // 按钮被倒计时气泡取代 / 全部消失 → 领取成功确认
-            ScanOutcome::Countdown(s) => {
-                wait_decision(Phase::Watching, countdown_wait_ms(s))
+            // 按钮被倒计时气泡取代 / 全部消失 → 领取成功确认；
+            // 8 秒后链式复查：双槽就绪时第二箱立即连开，否则按新倒计时精准休眠
+            ScanOutcome::Countdown(s) => wait_decision(
+                Phase::Watching,
+                CHAIN_CHECK_MS.min(countdown_wait_ms(s)),
+            ),
+            ScanOutcome::Nothing => wait_decision(Phase::Watching, NO_CHEST_POLL_MS),
+            // 按钮停留在动画态超过确认时限（桌宠异常）→ 视同未生效：回滚并冷却
+            ScanOutcome::Animating if now_ms > attempted_at_ms + VERIFY_DEADLINE_MS => {
+                Decision {
+                    claim: false,
+                    opens_delta: -1,
+                    next_phase: Phase::BackoffUntil { until_ms: now_ms + BACKOFF_MS },
+                    next_scan_in_ms: BACKOFF_MS,
+                }
             }
-            ScanOutcome::Nothing => wait_decision(Phase::Watching, SLOW_POLL_MS),
             ScanOutcome::Animating => wait_decision(phase, ANIMATING_WAIT_MS),
         },
 
@@ -146,12 +165,12 @@ pub fn decide(phase: Phase, scan: ScanOutcome, now_ms: u64) -> Decision {
                         next_scan_in_ms: VERIFY_DELAY_MS,
                     },
                     ScanOutcome::Countdown(s) => {
-                        wait_decision(Phase::Watching, countdown_wait_ms(s))
+                        wait_decision(Phase::Watching, CHAIN_CHECK_MS.min(countdown_wait_ms(s)))
                     }
                     ScanOutcome::Animating => {
                         wait_decision(Phase::Watching, ANIMATING_WAIT_MS)
                     }
-                    ScanOutcome::Nothing => wait_decision(Phase::Watching, SLOW_POLL_MS),
+                    ScanOutcome::Nothing => wait_decision(Phase::Watching, NO_CHEST_POLL_MS),
                 }
             }
         }

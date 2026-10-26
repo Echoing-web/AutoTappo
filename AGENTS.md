@@ -144,21 +144,32 @@ autotappo/
 4. **关键状态信号**：点击动画期间按钮类名临时附加 `reward-btn--press` / `reward-btn--open`，且按钮进入 `disabled`（前端单飞锁 `Co` 标志）；
 5. **官方 UIA 实测验证**：桌宠窗口标题 `Wuwa Tappo`（窗口类 `Tauri Window`），Chromium 将 CSS 类名暴露为 UIA `ClassName` 属性（实测 `settings-btn` 可被 .NET UIAutomation 枚举命中），即 `reward-btn` 按钮在 UIA 树中按类名可直接定位。
 
-### 6.2 实现方案（事件注入 · 方案 A 落地，v0.3.0 倒计时感知）
+### 6.2 实现方案（事件注入 · 方案 A 落地，v0.3.0 倒计时感知 + 多根发现）
 
 采用**纯后台 UI Automation**，彻底避免方案 B 的前台激活与鼠标位移：
 
-- **发现**：`EnumWindows` 按标题精确匹配 `Wuwa Tappo` → `ElementFromHandle` → 两次
-  `FindAllBuildCache(Descendants)`：Button 条件找 `reward-btn`（缓存 ClassName/Name/IsEnabled），
-  Image 条件找 `reward-countdown`（UIA Name 即 aria-label 倒计时 "MM:SS"）；
+- **发现（多根扫描）**：`EnumWindows` 按标题精确匹配 `Wuwa Tappo` → **顶层 + EnumChildWindows
+  逐子窗口**收集扫描根 → 对每个根 `ElementFromHandle` + 两次 `FindAllBuildCache(Descendants)`：
+  Button 条件找 `reward-btn`（缓存 ClassName/Name/IsEnabled），Image 条件找 `reward-countdown`
+  （UIA Name 即 aria-label 倒计时 "MM:SS"）；
+  ⚠️ **实机关键结论**：桌宠顶层窗口（Tauri/wry 宿主）的 WM_GETOBJECT **不转发** WebView2
+  内容提供者——原生 UIA 客户端从顶层元素只能读到空树（托管 .NET 客户端因聚合子窗口
+  提供者链而可见，易造成误判）；内容提供者挂在 WebView2 运行时进程（msedgewebview2.exe，
+  与宿主不同 pid）的 `Chrome_WidgetWin_1` / `Chrome_RenderWidgetHostHWND` 子窗口上。
+  只扫顶层 = 永远读不到就绪宝箱；
 - **触发**：类名**精确等于** `reward-btn`（排除 press/open 动画态）且 `IsEnabled` 为真 → `InvokePattern.Invoke()`，失败回退 `LegacyIAccessible.DoDefaultAction()`——等价 DOM click，零鼠标位移、零焦点抢占；
 - **调度（v0.3.0）**：决策引擎 `box_logic.rs` 纯函数 `decide(phase, scan, now)`——
-  Watching+Countdown(s) → 休眠 `s*1000+600ms`（>10 分钟分段校准）；Nothing → 60 秒慢轮询；
-  PendingVerify → 3.5 秒复查（按钮数减少=成功/链式下一箱，未减少=回滚+冷却 5 分钟）；
+  Watching+Countdown(s) → 休眠 `s*1000+600ms`（>10 分钟分段校准）；Nothing → 8 秒重扫
+  （兼作树保活）；PendingVerify → 3.5 秒复查（按钮数减少=成功/链式下一箱，未减少=回滚+
+  冷却 5 分钟；动画态超 30 秒强制回滚）；确认成功后 8 秒链式复查（双槽连开）；
   等待期 1 秒心跳保证开关/退出 ≤1.5 秒响应；
+- **树保活**：20 秒轻量 ping（仅子窗口根，顶层不作为死亡判据）保持 Chromium 无障碍树
+  存活；全部子窗口 ping 失败 → 3 秒快速唤醒重试（查询本身触发 Chromium 重建树），
+  连续 40 次失败降频 30 秒；
 - **状态同步**：`get_status` 返回 `auto_box_enabled / auto_box_opens / auto_box_status`（0 未开启 / 1 监测中 / 2 发现宝箱 / 3 开箱成功 / 4 冷却重试），前端 500ms 轮询渲染（带变化检测）；开关状态由 localStorage 持久化并经 `set_auto_box` IPC 同步原生线程；
-- **测试**：`src-tauri/tests/bdd_box_logic.rs` 22 条 Given/When/Then 全绿；实机 E2E 脚本
-  `local-e2e.ps1` 自动优先 pwsh7，UIA 驱动自身面板完成开关/挂机/退出闭环。
+- **测试**：`src-tauri/tests/bdd_box_logic.rs` 23 条 Given/When/Then 全绿；实机 E2E 脚本
+  `local-e2e.ps1` 自动优先 pwsh7，UIA 驱动自身面板完成开关/挂机/退出闭环；
+  `probe-chest.ps1` 独立 .NET 探针交叉验证桌宠槽位状态。
 
 > 逆向解包与 UIA 验证脚本位于仓库外本地工作区 `..\_autotappo_analysis\`（严禁入库——含官方版权资源的解包产物）。
 
