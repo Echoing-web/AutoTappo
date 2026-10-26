@@ -46,7 +46,7 @@ jobs:
       - name: 上传免安装单文件 EXE（任意分支均可直接下载测试）
         uses: actions/upload-artifact@v4
         with:
-          name: AutoTappo-exe-${{ github.sha }}
+          name: AutoTappo-Windows-x64-latest
           path: src-tauri/target/release/AutoTappo.exe
           if-no-files-found: error
           retention-days: 30

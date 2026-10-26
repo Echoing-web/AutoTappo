@@ -57,6 +57,14 @@
 - 启动时通过 `SystemParametersInfoW(SPI_SETMOUSEVANISH, ...)` 暂时关闭 Windows “键入时隐藏鼠标指针”，程序完全退出时自动恢复；
 - 不执行任何改变光标坐标的位移指令，保证 100% 物理手感。
 
+### 3.4 图标多分辨率标准与 WebView2 隔离规范
+1. **Windows Multi-frame ICO 规范**：
+   - Windows 资源管理器及任务栏要求 `.ico` 必须包含 16x16, 24x24, 32x32, 48x48, 64x64, 128x128, 256x256 全套标准帧，否则易被系统缓存回退或模糊拉伸；
+   - `build.rs` 中显式配置 `cargo:rerun-if-changed`，确保 CI 资源更新时 Cargo 绝不沿用旧编译中间件。
+2. **WebView2 前端 IIFE 严格隔离规范**：
+   - 前端 `web/app.js` 必须使用自执行函数 `(function() { 'use strict'; ... })();` 进行完全闭包隔离；
+   - 避免在 WebView2 内部执行上下文切换或热重载时触发 `SyntaxError: Identifier ... has already been declared` 导致整段 JS 解析中断。
+
 ---
 
 ## 4. 软件架构与工程结构

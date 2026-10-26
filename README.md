@@ -1,4 +1,5 @@
 <p align="center">
+  <img src="web/logo.png" width="100" height="100" alt="AutoTappo Logo" style="border-radius: 20px; box-shadow: 0 4px 20px rgba(0, 242, 254, 0.4);">
   <h1 align="center">AutoTappo</h1>
   <p align="center">
     <strong>《鸣潮》官方桌宠 WuwaTappo 智能后台挂机助手</strong>
