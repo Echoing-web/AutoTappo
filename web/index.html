@@ -11,13 +11,17 @@
     <!-- 顶部标题栏 -->
     <header class="app-header">
       <div class="logo-area">
-        <span class="logo-icon">🐾</span>
+        <img src="logo.png" alt="AutoTappo Logo" class="app-logo">
         <div class="logo-text">
           <h1>AutoTappo</h1>
-          <span class="sub-title">WuwaTappo 后台助手</span>
+          <span class="sub-title">WuwaTappo 智能挂机</span>
         </div>
       </div>
-      <button id="btn-minimize" class="icon-btn" title="收进系统托盘">─</button>
+      <!-- 右上角铃铛更新按钮 -->
+      <button id="btn-bell" class="icon-btn bell-btn" title="检查更新与版本信息">
+        <span class="bell-icon">🔔</span>
+        <span class="update-dot" id="update-dot"></span>
+      </button>
     </header>
 
     <!-- 核心状态卡片 -->
@@ -35,7 +39,7 @@
       </div>
       <button id="btn-toggle" class="main-toggle-btn">
         <span id="btn-toggle-icon">▶</span>
-        <span id="btn-toggle-text">开始挂机</span>
+        <span id="btn-toggle-text">开始挂机 (F6)</span>
       </button>
     </section>
 
@@ -58,36 +62,61 @@
       </div>
     </section>
 
-    <!-- 特性与提示列表 -->
-    <section class="info-section">
-      <div class="info-item">
-        <span class="info-icon">⌨️</span>
-        <div class="info-text">
-          <strong>全局快捷键 [ F6 ] 或 [ F10 ]</strong>
-          <p>无需切换窗口，任何时候按键随时启停</p>
-        </div>
-      </div>
-      <div class="info-item">
-        <span class="info-icon">🛡️</span>
-        <div class="info-text">
-          <strong>智能全场景避让保护</strong>
-          <p>打字、按 Shift 切换中英文或划词拖拽时自动秒停</p>
-        </div>
-      </div>
-      <div class="info-item">
-        <span class="info-icon">🪟</span>
-        <div class="info-text">
-          <strong>关闭窗口自动收进托盘</strong>
-          <p>彻底释放界面内存，后台后台守护持续进行</p>
-        </div>
-      </div>
-    </section>
+    <!-- 精简快捷键提示 -->
+    <div class="hotkey-pill">
+      <span class="hotkey-icon">⌨️</span>
+      <span class="hotkey-text">全局热键：按 <strong>[ F6 ]</strong> 或 <strong>[ F10 ]</strong> 随时开启 / 暂停</span>
+    </div>
 
     <!-- 底部控制栏 -->
     <footer class="app-footer">
-      <button id="btn-hide" class="footer-btn">收进托盘</button>
+      <button id="btn-hide" class="footer-btn">收进系统托盘</button>
       <button id="btn-quit" class="footer-btn danger">退出程序</button>
     </footer>
+
+    <!-- 更新弹窗 (Modal) -->
+    <div class="modal-backdrop" id="update-modal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-area">
+            <span class="modal-icon">🔔</span>
+            <h3>版本与更新</h3>
+          </div>
+          <button class="modal-close-btn" id="btn-modal-close">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="version-row">
+            <span class="v-label">当前运行版本</span>
+            <span class="v-val current" id="lbl-cur-version">v0.1.0</span>
+          </div>
+          <div class="version-row">
+            <span class="v-label">最新发布版本</span>
+            <span class="v-val latest" id="lbl-latest-version">检测中...</span>
+          </div>
+
+          <div class="update-status-box" id="update-status-box">
+            <div class="spinner" id="update-spinner" style="display: none;"></div>
+            <p id="update-status-text">点击下方按钮获取最新版本信息</p>
+          </div>
+
+          <div class="changelog-area" id="changelog-area" style="display: none;">
+            <label class="cl-title">新版本亮点：</label>
+            <div class="cl-content" id="changelog-content"></div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="btn-check-now" class="modal-btn primary">
+            <span id="btn-check-icon">🔄</span>
+            <span id="btn-check-text">立即检查更新</span>
+          </button>
+          <a id="btn-download" class="modal-btn action" href="https://github.com/To0Ru/AutoTappo/releases" target="_blank" style="display: none;">
+            前往下载新版 ↗
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

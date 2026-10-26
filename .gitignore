@@ -1,4 +1,4 @@
-# ---- 临时测试脚本（按要求不提交） ---- #
+# ---- 临时测试脚本与截图 ---- #
 *.py
 *.pyc
 __pycache__/
@@ -6,9 +6,13 @@ __pycache__/
 *.ahk
 *.dat
 *.log
-*.png
-*.jpg
 *.tmp
+pet_*.png
+batch_*.png
+counter_*.png
+mon1_*.png
+all_screens.png
+now.png
 
 # ---- Rust 构建产物 ---- #
 target/

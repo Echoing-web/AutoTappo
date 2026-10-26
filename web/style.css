@@ -1,16 +1,17 @@
 /* ==========================================================================
-   AutoTappo 现代化深色玻璃拟态 UI
+   AutoTappo 现代化深色玻璃拟态 UI (支持独立浏览器预览)
    ========================================================================== */
 
 :root {
-  --bg-primary: #0d111a;
-  --bg-card: rgba(22, 29, 44, 0.75);
+  --bg-primary: #0a0e17;
+  --bg-card: rgba(20, 27, 41, 0.82);
   --bg-card-border: rgba(255, 255, 255, 0.08);
   --accent-cyan: #00f2fe;
-  --accent-blue: #4facfe;
+  --accent-blue: #38bdf8;
   --accent-green: #10b981;
   --accent-purple: #8b5cf6;
-  --text-main: #f1f5f9;
+  --accent-orange: #f59e0b;
+  --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --text-dim: #64748b;
   --radius-lg: 16px;
@@ -33,16 +34,22 @@ body {
   overflow: hidden;
   height: 100vh;
   width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .app-container {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 18px 20px 14px;
-  background: radial-gradient(circle at 80% 20%, rgba(79, 172, 254, 0.12), transparent 45%),
-              radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.10), transparent 50%),
+  width: 100%;
+  max-width: 440px;
+  padding: 16px 20px 14px;
+  background: radial-gradient(circle at 85% 15%, rgba(0, 242, 254, 0.12), transparent 45%),
+              radial-gradient(circle at 15% 85%, rgba(139, 92, 246, 0.10), transparent 50%),
               var(--bg-primary);
+  position: relative;
 }
 
 /* 顶部标题栏 */
@@ -56,16 +63,20 @@ body {
 .logo-area {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
-.logo-icon {
-  font-size: 26px;
-  filter: drop-shadow(0 2px 8px rgba(0, 242, 254, 0.35));
+.app-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+  filter: drop-shadow(0 2px 10px rgba(0, 242, 254, 0.4));
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .logo-text h1 {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.5px;
   background: linear-gradient(135deg, #ffffff 30%, var(--accent-cyan));
@@ -78,23 +89,51 @@ body {
   color: var(--text-muted);
 }
 
-.icon-btn {
+/* 铃铛按钮 */
+.bell-btn {
+  position: relative;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--bg-card-border);
   color: var(--text-muted);
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
+  font-size: 15px;
 }
 
-.icon-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+.bell-btn:hover {
+  background: rgba(0, 242, 254, 0.15);
+  border-color: rgba(0, 242, 254, 0.35);
+  color: var(--accent-cyan);
+  transform: scale(1.05);
+}
+
+.update-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 1.5px solid var(--bg-primary);
+  display: none;
+}
+
+.update-dot.active {
+  display: block;
+  animation: pulse-dot 1.5s infinite;
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.8; }
 }
 
 /* 核心状态卡片 */
@@ -108,7 +147,7 @@ body {
   flex-direction: column;
   gap: 14px;
   backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   margin-bottom: 14px;
   overflow: hidden;
 }
@@ -134,7 +173,7 @@ body {
   background: rgba(16, 185, 129, 0.18);
   color: #34d399;
   border-color: rgba(16, 185, 129, 0.4);
-  box-shadow: 0 0 14px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.35);
 }
 
 .sent-counter {
@@ -155,10 +194,11 @@ body {
 }
 
 .counter-value {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--accent-cyan);
+  text-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
 }
 
 .mini-btn {
@@ -189,7 +229,7 @@ body {
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
   color: #ffffff;
   box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
   transition: all 0.25s ease;
@@ -205,12 +245,12 @@ body {
 }
 
 .main-toggle-btn.running {
-  background: linear-gradient(135deg, #f59e0b, #ef4444);
-  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, #ea580c, #dc2626);
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.35);
 }
 
 .main-toggle-btn.running:hover {
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45);
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
 }
 
 /* 速度选择器 */
@@ -252,10 +292,10 @@ body {
 }
 
 .speed-btn.active {
-  background: rgba(79, 172, 254, 0.12);
+  background: rgba(0, 242, 254, 0.10);
   border-color: var(--accent-cyan);
   color: var(--accent-cyan);
-  box-shadow: 0 0 12px rgba(0, 242, 254, 0.2);
+  box-shadow: 0 0 14px rgba(0, 242, 254, 0.2);
 }
 
 .speed-title {
@@ -269,41 +309,29 @@ body {
 }
 
 .speed-btn.active .speed-desc {
-  color: rgba(0, 242, 254, 0.7);
+  color: rgba(0, 242, 254, 0.75);
 }
 
-/* 信息提示列表 */
-.info-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
-}
-
-.info-item {
+/* 精简快捷键胶囊 */
+.hotkey-pill {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-md);
-}
-
-.info-icon {
-  font-size: 18px;
-}
-
-.info-text strong {
   font-size: 12px;
-  color: var(--text-main);
-  display: block;
+  color: var(--text-muted);
+  margin-bottom: 14px;
 }
 
-.info-text p {
-  font-size: 11px;
-  color: var(--text-dim);
-  margin-top: 1px;
+.hotkey-icon {
+  font-size: 16px;
+}
+
+.hotkey-text strong {
+  color: var(--accent-cyan);
 }
 
 /* 底部操作区 */
@@ -311,17 +339,18 @@ body {
   display: flex;
   gap: 10px;
   margin-top: auto;
-  padding-top: 8px;
+  padding-top: 6px;
 }
 
 .footer-btn {
   flex: 1;
-  padding: 8px 0;
+  padding: 9px 0;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--bg-card-border);
   color: var(--text-muted);
   font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -335,4 +364,216 @@ body {
   background: rgba(239, 68, 68, 0.2);
   border-color: rgba(239, 68, 68, 0.4);
   color: #f87171;
+}
+
+/* ==========================================================================
+   更新检查弹窗 (Modal)
+   ========================================================================== */
+
+.modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.modal-backdrop.show {
+  display: flex;
+  opacity: 1;
+}
+
+.modal-card {
+  width: 100%;
+  background: #141c2b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  transform: translateY(10px);
+  transition: transform 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-backdrop.show .modal-card {
+  transform: translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-icon {
+  font-size: 18px;
+}
+
+.modal-title-area h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.modal-close-btn:hover {
+  color: #fff;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.version-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+
+.v-label {
+  color: var(--text-muted);
+}
+
+.v-val {
+  font-weight: 600;
+  font-family: Consolas, monospace;
+}
+
+.v-val.current {
+  color: #38bdf8;
+}
+
+.v-val.latest {
+  color: #34d399;
+}
+
+.update-status-box {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.update-status-box.has-new {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+  color: #fbbf24;
+}
+
+.update-status-box.is-latest {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.08);
+  color: #34d399;
+}
+
+.changelog-area {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.cl-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.cl-content {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 8px;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 9px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.modal-btn.primary {
+  background: linear-gradient(135deg, #0284c7, #06b6d4);
+  color: #fff;
+}
+
+.modal-btn.primary:hover {
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.35);
+}
+
+.modal-btn.action {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--accent-cyan);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
