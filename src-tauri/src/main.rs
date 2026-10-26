@@ -1,6 +1,7 @@
 // Release 发布版禁用 Windows 控制台黑框
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod box_opener;
 mod clicker;
 mod commands;
 mod tray;
@@ -11,11 +12,13 @@ use std::sync::{Arc, Mutex};
 use tauri::tray::TrayIcon;
 use tauri::Manager;
 
+use crate::box_opener::BoxOpenerController;
 use crate::clicker::ClickerController;
 
 /// 全局共享状态
 pub struct Inner {
     pub clicker: Arc<ClickerController>,
+    pub box_opener: Arc<BoxOpenerController>,
     pub tray: Mutex<Option<TrayIcon>>,
     pub tray_ok: AtomicBool,
     pub shutting_down: AtomicBool,
@@ -30,8 +33,13 @@ fn main() {
             // 启动后台静默连点原生工作线程
             clicker.start_worker();
 
+            let box_opener = Arc::new(BoxOpenerController::new());
+            // 启动后台自动开箱 UIA 工作线程（默认关闭，由面板开关控制）
+            box_opener.start_worker();
+
             let inner = Arc::new(Inner {
                 clicker,
+                box_opener,
                 tray: Mutex::new(None),
                 tray_ok: AtomicBool::new(false),
                 shutting_down: AtomicBool::new(false),
@@ -76,6 +84,7 @@ fn main() {
             commands::set_hotkey,
             commands::get_hotkey,
             commands::reset_sent_count,
+            commands::set_auto_box,
             commands::minimize_to_tray,
             commands::quit_app,
         ])

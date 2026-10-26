@@ -486,6 +486,53 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+/* 自动开箱已激活：紫色实线边框 + 微光背景，替代虚线预告态 */
+.feature-preview-card.active {
+  background: rgba(139, 92, 246, 0.1);
+  border-style: solid;
+  border-color: rgba(139, 92, 246, 0.45);
+  box-shadow: 0 0 14px rgba(139, 92, 246, 0.12);
+}
+
+/* 自动开箱拨动开关 */
+.ab-toggle {
+  width: 38px;
+  height: 21px;
+  padding: 0;
+  border-radius: 21px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ab-toggle:hover {
+  border-color: rgba(139, 92, 246, 0.45);
+}
+
+.ab-toggle .ab-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: all 0.2s ease;
+}
+
+.ab-toggle.on {
+  background: rgba(139, 92, 246, 0.35);
+  border-color: rgba(139, 92, 246, 0.6);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.35);
+}
+
+.ab-toggle.on .ab-knob {
+  left: 19px;
+  background: #c4b5fd;
+}
+
 /* 底部操作区 */
 .app-footer {
   display: flex;

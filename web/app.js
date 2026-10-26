@@ -3,7 +3,7 @@
 (function () {
   "use strict";
 
-  const CURRENT_VERSION = "v0.1.0";
+  const CURRENT_VERSION = "v0.2.0";
   const GITEE_API_URL = "https://gitee.com/api/v5/repos/To0Ru/AutoTappo/releases/latest";
   const GITHUB_API_URL = "https://api.github.com/repos/To0Ru/AutoTappo/releases/latest";
 
@@ -36,6 +36,19 @@
   const lblHotkey = document.getElementById("lbl-hotkey");
   const hotkeyTip = document.getElementById("hotkey-tip");
 
+  // 自动开箱 DOM
+  const autoBoxCard = document.getElementById("auto-box-card");
+  const autoBoxTag = document.getElementById("auto-box-tag");
+  const autoBoxDesc = document.getElementById("auto-box-desc");
+  const btnAutoBox = document.getElementById("btn-auto-box");
+
+  // 自动开箱状态码（与 Rust box_opener.rs 同步）
+  const AB_IDLE = 0;
+  const AB_WATCHING = 1;
+  const AB_FOUND = 2;
+  const AB_OPENED = 3;
+  const AB_BACKOFF = 4;
+
   // Modal 弹窗元素
   const updateModal = document.getElementById("update-modal");
   const btnModalClose = document.getElementById("btn-modal-close");
@@ -65,6 +78,11 @@
   let currentHotkeyName = localStorage.getItem("autotappo_hotkey_name") || "F6";
   let currentHotkeyVK = parseInt(localStorage.getItem("autotappo_hotkey_vk"), 10) || 0x75;
   let isRecordingHotkey = false;
+
+  // 自动开箱状态（localStorage 持久化，与 Rust 原生线程同步）
+  let autoBoxEnabled = localStorage.getItem("autotappo_autobox") === "1";
+  let autoBoxStatus = AB_IDLE;
+  let autoBoxOpens = 0;
 
   const versionText = document.querySelector(".version-text");
   if (versionText) versionText.textContent = CURRENT_VERSION;
@@ -117,6 +135,53 @@
         btn.classList.remove("active");
       }
     });
+
+    // 5. 自动开箱状态看板
+    if (typeof status.auto_box_enabled === "boolean") {
+      autoBoxEnabled = status.auto_box_enabled;
+    }
+    if (typeof status.auto_box_status === "number") {
+      autoBoxStatus = status.auto_box_status;
+    }
+    if (typeof status.auto_box_opens === "number") {
+      autoBoxOpens = status.auto_box_opens;
+    }
+    renderAutoBoxUI();
+  }
+
+  // 自动开箱卡片渲染
+  function renderAutoBoxUI() {
+    if (btnAutoBox) {
+      btnAutoBox.classList.toggle("on", autoBoxEnabled);
+      btnAutoBox.setAttribute("aria-checked", autoBoxEnabled ? "true" : "false");
+    }
+    if (autoBoxCard) {
+      autoBoxCard.classList.toggle("active", autoBoxEnabled);
+    }
+    if (autoBoxTag) {
+      autoBoxTag.textContent = autoBoxEnabled ? "运行中" : "未开启";
+    }
+    if (autoBoxDesc) {
+      if (!autoBoxEnabled) {
+        autoBoxDesc.textContent = "宝箱就绪自动领取 · 每箱消耗 1,000 字符数";
+      } else {
+        switch (autoBoxStatus) {
+          case AB_FOUND:
+            autoBoxDesc.textContent = "发现就绪宝箱，正在开启…";
+            break;
+          case AB_OPENED:
+            autoBoxDesc.textContent = `监测中 · 已自动开箱 ${autoBoxOpens.toLocaleString()} 次`;
+            break;
+          case AB_BACKOFF:
+            autoBoxDesc.textContent = "点数不足或暂不可开，稍后自动重试…";
+            break;
+          case AB_WATCHING:
+          default:
+            autoBoxDesc.textContent = "监测中，发现宝箱将自动开启…";
+            break;
+        }
+      }
+    }
   }
 
   // 轮询同步状态
@@ -149,6 +214,15 @@
           if (counterValue) counterValue.textContent = localSentCount.toLocaleString();
         }
       }, speedIntervals[currentSpeed] || 100);
+
+      // 自动开箱预览模拟：开启后约 8 秒模拟一次成功开箱
+      setInterval(() => {
+        if (autoBoxEnabled) {
+          autoBoxOpens += 1;
+          autoBoxStatus = AB_OPENED;
+          renderAutoBoxUI();
+        }
+      }, 8000);
     }
     startPreviewLoop();
   }
@@ -209,6 +283,33 @@
       }
     });
   });
+
+  if (btnAutoBox) {
+    btnAutoBox.addEventListener("click", async () => {
+      autoBoxEnabled = !autoBoxEnabled;
+      localStorage.setItem("autotappo_autobox", autoBoxEnabled ? "1" : "0");
+      autoBoxStatus = autoBoxEnabled ? AB_WATCHING : AB_IDLE;
+      renderAutoBoxUI();
+
+      if (isTauri) {
+        try {
+          await invoke("set_auto_box", { enabled: autoBoxEnabled });
+        } catch (err) {
+          console.error("Failed to set auto box:", err);
+        }
+      } else {
+        console.info("[Browser Preview Mode] 自动开箱:", autoBoxEnabled ? "开启" : "关闭");
+      }
+    });
+  }
+
+  // 启动时把持久化的开关状态同步给原生线程
+  if (isTauri && autoBoxEnabled) {
+    invoke("set_auto_box", { enabled: true }).catch((err) => {
+      console.error("Failed to restore auto box state:", err);
+    });
+  }
+  renderAutoBoxUI();
 
   const hideWindow = async () => {
     if (isTauri) {

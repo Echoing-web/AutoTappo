@@ -14,6 +14,9 @@ mon1_*.png
 all_screens.png
 now.png
 
+# ---- 本地逆向分析工作区（官方二进制解包产物，严禁入库） ---- #
+_analysis/
+
 # ---- Rust 构建产物 ---- #
 target/
 src-tauri/target/

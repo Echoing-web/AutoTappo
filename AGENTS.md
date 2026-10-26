@@ -82,7 +82,8 @@ autotappo/
 │       ├── tray.rs        # 托盘图标、左键单击呼出、托盘右键上下文菜单
 │       ├── window.rs      # 按需创建与销毁主窗口 (彻底释放 WebView2 渲染内存)
 │       ├── clicker.rs     # 后台静默连点工作线程 (F21~F24发射、礼貌避让、动态热键监听)
-│       └── commands.rs    # IPC 接口 (get_status, toggle_running, set_speed, set_hotkey, reset_count, minimize, quit)
+│       ├── box_opener.rs  # 自动开箱工作线程 (UIA 后台无鼠标触发 reward-btn，冷却防刷)
+│       └── commands.rs    # IPC 接口 (get_status, toggle_running, set_speed, set_hotkey, set_auto_box, reset_count, minimize, quit)
 ├── web/
 │   ├── index.html         # 精致看板 UI (状态卡片、三档速度、自定义热键胶囊、自动开箱预告、更新弹窗)
 │   ├── style.css          # 现代化玻璃拟态 UI (移除刺眼彩色Emoji，全单色几何矢量SVG，细腻微光动画)
@@ -114,21 +115,38 @@ autotappo/
 5. **前端无编译本地即开即看**：
    - 直接双击 `web/index.html` 即可在普通浏览器中体验完整 UI 与交互动效；
    - 控制台内置 `testNewVersionUI()` 快速测试钩子。
-6. **双 Git 远端协同**：
+6. **自动开箱 (v0.2.0 新增)**：
+   - 后台 UIA 精确匹配桌宠 `reward-btn` 宝箱按钮并标准 Invoke，全程零鼠标干涉、零焦点抢占；
+   - 就绪宝箱自动领取开启，精确类名 + IsEnabled 双重防重入，失败自动冷却防错误气泡刷屏；
+   - 面板卡片开关（localStorage 持久化）+ 实时状态看板（监测中/发现宝箱/开箱计数/冷却）。
+7. **双 Git 远端协同**：
    - GitHub: `origin` (`https://github.com/To0Ru/AutoTappo.git`)
    - Gitee: `gitee` (`git@gitee.com:To0Ru/AutoTappo.git`)
 
 ---
 
-## 6. 后续规划：自动开箱功能 (Auto-Box Opening)
+## 6. 自动开箱功能 (Auto-Box Opening) — 已实现 (v0.2.0)
 
-界面中已预留【🎁 自动开箱 · 待支持】功能展示位，后续版本开发要点：
-1. **桌宠开箱机制逆向**：
-   - 桌宠点击累计一定阈值或获得宝箱后，UI 会出现可点击的开箱按钮；
-   - 研究官方 WebView 中开箱相关的 IPC 事件（如 `open-box`、`claim-reward`）或屏幕像素定位；
-2. **实现策略候选**：
-   - **方案 A（事件注入/窗口消息）**：如果桌宠 WebView 对特定按键/IPC 有响应，优先使用后台静默触发；
-   - **方案 B（礼貌前台模拟）**：仅在检测到桌宠窗口前台且满足开箱条件时，轻巧激活窗口执行一次点击并迅速归位。
+### 6.1 官方桌宠开箱机制逆向结论
+
+通过对 `WuwaTappo.exe` 内嵌前端资源（Tauri asset 表，明文键名 + brotli 值，可用 Node `zlib.brotliDecompressSync` 直接雕刻解包）的逆向分析确认：
+
+1. **宝箱生成规则**：每累计 30 分钟活跃时间，宝箱槽生成一个宝箱；双槽（`left_treasure_chest` / `right_treasure_chest`）最多存 2 个，存满后活跃计时暂停；
+2. **领取条件**：登录账号 + 消耗 1,000 字符数（点数不足报 `code.70005`，无宝箱报 `code.70004`，冷却中报 `code.70006`）；
+3. **前端交互实现**：宝箱就绪时桌宠 WebView 内渲染 **`<button class="reward-btn">`**（左右槽各一），`onClick` 触发 `openChest(place, click_num)` → POST `api/frontend/chests/open`；
+4. **关键状态信号**：点击动画期间按钮类名临时附加 `reward-btn--press` / `reward-btn--open`，且按钮进入 `disabled`（前端单飞锁 `Co` 标志）；
+5. **官方 UIA 实测验证**：桌宠窗口标题 `Wuwa Tappo`（窗口类 `Tauri Window`），Chromium 将 CSS 类名暴露为 UIA `ClassName` 属性（实测 `settings-btn` 可被 .NET UIAutomation 枚举命中），即 `reward-btn` 按钮在 UIA 树中按类名可直接定位。
+
+### 6.2 实现方案（事件注入 · 方案 A 落地）
+
+采用**纯后台 UI Automation**，彻底避免方案 B 的前台激活与鼠标位移：
+
+- **发现**：`EnumWindows` 按标题精确匹配 `Wuwa Tappo` → `ElementFromHandle` → `FindAllBuildCache(Descendants, ControlType=Button)` 缓存 `ClassName` + `IsEnabled`；
+- **触发**：类名**精确等于** `reward-btn`（排除 press/open 动画态）且 `IsEnabled` 为真 → `InvokePattern.Invoke()`，失败回退 `LegacyIAccessible.DoDefaultAction()`——等价 DOM click，零鼠标位移、零焦点抢占；
+- **节奏**：常规 10s 一轮扫描（宝箱粒度为 30 分钟）；单轮最多开一箱（官方前端单飞锁）；触发后 3.5s 复查，若按钮仍以初始形态存在视为未生效（点数不足/未登录），进入 5 分钟冷却，避免在桌宠侧刷错误气泡；
+- **状态同步**：`get_status` 返回 `auto_box_enabled / auto_box_opens / auto_box_status`（0 未开启 / 1 监测中 / 2 发现宝箱 / 3 开箱成功 / 4 冷却重试），前端 500ms 轮询渲染；开关状态由 localStorage 持久化并经 `set_auto_box` IPC 同步原生线程。
+
+> 逆向解包与 UIA 验证脚本位于仓库外本地工作区 `..\_autotappo_analysis\`（严禁入库——含官方版权资源的解包产物）。
 
 ---
 
