@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AutoTappo 现代化深色玻璃拟态 UI (支持独立浏览器预览)
+   AutoTappo 现代化深色玻璃拟态 UI (支持独立浏览器预览与热键录制)
    ========================================================================== */
 
 :root {
@@ -312,26 +312,78 @@ body {
   color: rgba(0, 242, 254, 0.75);
 }
 
-/* 精简快捷键胶囊 */
+/* 可自定义全局热键胶囊 */
 .hotkey-pill {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
   padding: 10px 14px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-md);
   font-size: 12px;
-  color: var(--text-muted);
   margin-bottom: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.hotkey-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
 }
 
 .hotkey-icon {
   font-size: 16px;
 }
 
-.hotkey-text strong {
+.hotkey-label {
+  font-weight: 500;
+}
+
+.hotkey-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hotkey-badge {
+  background: rgba(0, 242, 254, 0.12);
+  border: 1px solid rgba(0, 242, 254, 0.3);
   color: var(--accent-cyan);
+  font-family: Consolas, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  min-width: 44px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.hotkey-badge:hover {
+  background: rgba(0, 242, 254, 0.22);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+}
+
+.hotkey-badge.recording {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #f87171;
+  color: #fca5a5;
+  animation: pulse-record 1s infinite;
+}
+
+@keyframes pulse-record {
+  0% { transform: scale(0.98); opacity: 0.8; }
+  50% { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(0.98); opacity: 0.8; }
+}
+
+.hotkey-tip {
+  font-size: 11px;
+  color: var(--text-dim);
 }
 
 /* 底部操作区 */

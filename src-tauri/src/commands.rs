@@ -11,6 +11,7 @@ pub struct AppStatusResponse {
     pub running: bool,
     pub speed_mode: u8,
     pub total_sent: u64,
+    pub hotkey_vk: i32,
 }
 
 #[tauri::command]
@@ -20,6 +21,7 @@ pub fn get_status(state: State<'_, AppState>) -> AppStatusResponse {
         running: inner.clicker.running.load(Ordering::Relaxed),
         speed_mode: inner.clicker.speed_mode.load(Ordering::Relaxed),
         total_sent: inner.clicker.total_sent.load(Ordering::Relaxed),
+        hotkey_vk: inner.clicker.hotkey_vk.load(Ordering::Relaxed),
     }
 }
 
@@ -40,6 +42,18 @@ pub fn set_running(state: State<'_, AppState>, running: bool) {
 pub fn set_speed(state: State<'_, AppState>, mode: u8) {
     let inner = &state.0;
     inner.clicker.speed_mode.store(mode, Ordering::SeqCst);
+}
+
+#[tauri::command]
+pub fn set_hotkey(state: State<'_, AppState>, vk: i32) {
+    let inner = &state.0;
+    inner.clicker.hotkey_vk.store(vk, Ordering::SeqCst);
+}
+
+#[tauri::command]
+pub fn get_hotkey(state: State<'_, AppState>) -> i32 {
+    let inner = &state.0;
+    inner.clicker.hotkey_vk.load(Ordering::Relaxed)
 }
 
 #[tauri::command]

@@ -62,10 +62,18 @@
       </div>
     </section>
 
-    <!-- 精简快捷键提示 -->
-    <div class="hotkey-pill">
-      <span class="hotkey-icon">⌨️</span>
-      <span class="hotkey-text">全局热键：按 <strong>[ F6 ]</strong> 或 <strong>[ F10 ]</strong> 随时开启 / 暂停</span>
+    <!-- 可自定义全局热键胶囊 -->
+    <div class="hotkey-pill" id="hotkey-pill">
+      <div class="hotkey-left">
+        <span class="hotkey-icon">⌨️</span>
+        <span class="hotkey-label">全局启停热键</span>
+      </div>
+      <div class="hotkey-right">
+        <button id="btn-hotkey" class="hotkey-badge" title="点击后按键盘任意键设置新快捷键">
+          <span id="lbl-hotkey">F6</span>
+        </button>
+        <span class="hotkey-tip" id="hotkey-tip">点击修改</span>
+      </div>
     </div>
 
     <!-- 底部控制栏 -->

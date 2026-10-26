@@ -3,11 +3,11 @@
 //! 1. 采用 F21~F24 (0x84~0x87) 顶级幻影键，不打出乱码，不冲突快捷键；
 //! 2. 毫秒级侦测用户物理操作 (打字、Shift 切输入法、鼠标拖拽/划词)，实时礼貌避让；
 //! 3. 绝对 0 鼠标位移干涉，原生物理手感；
-//! 4. 纯手写 Win32 FFI，不引入庞大的 windows crate，构建迅速小巧。
+//! 4. 支持全局热键自定义 (默认 F6，支持动态切换)。
 
 use rand::Rng;
 use std::ffi::c_void;
-use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -40,9 +40,8 @@ extern "system" {
 // 幻影键 (F21 ~ F24)
 const PHANTOM_KEYS: [u8; 4] = [0x84, 0x85, 0x86, 0x87];
 
-// 快捷键: F6 (0x75) 与 F10 (0x79)
-const VK_F6: i32 = 0x75;
-const VK_F10: i32 = 0x79;
+// 默认快捷键: F6 (0x75)
+pub const DEFAULT_HOTKEY_VK: i32 = 0x75;
 
 // 需避让的物理按键：鼠标按键、修饰键、字母数字及标点
 fn is_key_down(vk: i32) -> bool {
@@ -119,6 +118,7 @@ pub struct ClickerController {
     pub running: Arc<AtomicBool>,
     pub speed_mode: Arc<AtomicU8>,
     pub total_sent: Arc<AtomicU64>,
+    pub hotkey_vk: Arc<AtomicI32>,
     pub shutdown: Arc<AtomicBool>,
 }
 
@@ -128,6 +128,7 @@ impl ClickerController {
             running: Arc::new(AtomicBool::new(false)),
             speed_mode: Arc::new(AtomicU8::new(0)),
             total_sent: Arc::new(AtomicU64::new(0)),
+            hotkey_vk: Arc::new(AtomicI32::new(DEFAULT_HOTKEY_VK)),
             shutdown: Arc::new(AtomicBool::new(false)),
         }
     }
@@ -136,6 +137,7 @@ impl ClickerController {
         let running = Arc::clone(&self.running);
         let speed_mode = Arc::clone(&self.speed_mode);
         let total_sent = Arc::clone(&self.total_sent);
+        let hotkey_vk = Arc::clone(&self.hotkey_vk);
         let shutdown = Arc::clone(&self.shutdown);
 
         thread::spawn(move || {
@@ -162,23 +164,21 @@ impl ClickerController {
             }
 
             let mut rng = rand::thread_rng();
-            let mut last_f6_down = false;
-            let mut last_f10_down = false;
+            let mut last_hotkey_down = false;
             let mut last_user_active_time = Instant::now() - Duration::from_secs(1);
 
             while !shutdown.load(Ordering::Relaxed) {
-                // 1. 全局热键监听 (F6 与 F10)
-                let cur_f6 = is_key_down(VK_F6);
-                let cur_f10 = is_key_down(VK_F10);
+                // 1. 全局可自定义热键监听
+                let current_vk = hotkey_vk.load(Ordering::Relaxed);
+                let cur_hotkey_down = if current_vk > 0 { is_key_down(current_vk) } else { false };
 
-                if (cur_f6 && !last_f6_down) || (cur_f10 && !last_f10_down) {
+                if cur_hotkey_down && !last_hotkey_down {
                     let prev = running.fetch_xor(true, Ordering::SeqCst);
                     let new_state = !prev;
                     log_state_change(new_state);
                     thread::sleep(Duration::from_millis(200)); // 防抖
                 }
-                last_f6_down = cur_f6;
-                last_f10_down = cur_f10;
+                last_hotkey_down = cur_hotkey_down;
 
                 // 2. 检查是否处于运行状态
                 if running.load(Ordering::Relaxed) {

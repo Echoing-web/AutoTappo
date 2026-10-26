@@ -73,6 +73,8 @@ fn main() {
             commands::toggle_running,
             commands::set_running,
             commands::set_speed,
+            commands::set_hotkey,
+            commands::get_hotkey,
             commands::reset_sent_count,
             commands::minimize_to_tray,
             commands::quit_app,
