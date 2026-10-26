@@ -1,0 +1,338 @@
+/* ==========================================================================
+   AutoTappo 现代化深色玻璃拟态 UI
+   ========================================================================== */
+
+:root {
+  --bg-primary: #0d111a;
+  --bg-card: rgba(22, 29, 44, 0.75);
+  --bg-card-border: rgba(255, 255, 255, 0.08);
+  --accent-cyan: #00f2fe;
+  --accent-blue: #4facfe;
+  --accent-green: #10b981;
+  --accent-purple: #8b5cf6;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --radius-lg: 16px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--bg-primary);
+  color: var(--text-main);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 18px 20px 14px;
+  background: radial-gradient(circle at 80% 20%, rgba(79, 172, 254, 0.12), transparent 45%),
+              radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.10), transparent 50%),
+              var(--bg-primary);
+}
+
+/* 顶部标题栏 */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  font-size: 26px;
+  filter: drop-shadow(0 2px 8px rgba(0, 242, 254, 0.35));
+}
+
+.logo-text h1 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #ffffff 30%, var(--accent-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sub-title {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.icon-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--bg-card-border);
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* 核心状态卡片 */
+.status-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+
+.status-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(100, 116, 139, 0.2);
+  color: var(--text-muted);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  transition: all 0.3s ease;
+}
+
+.status-badge.running {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.3);
+}
+
+.sent-counter {
+  text-align: right;
+}
+
+.counter-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  display: block;
+}
+
+.counter-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.counter-value {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-cyan);
+}
+
+.mini-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.mini-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.main-toggle-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+  transition: all 0.25s ease;
+}
+
+.main-toggle-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.45);
+}
+
+.main-toggle-btn:active {
+  transform: translateY(1px);
+}
+
+.main-toggle-btn.running {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+.main-toggle-btn.running:hover {
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45);
+}
+
+/* 速度选择器 */
+.control-section {
+  margin-bottom: 14px;
+}
+
+.section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.speed-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.speed-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-md);
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.speed-btn:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-main);
+}
+
+.speed-btn.active {
+  background: rgba(79, 172, 254, 0.12);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.2);
+}
+
+.speed-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.speed-desc {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.speed-btn.active .speed-desc {
+  color: rgba(0, 242, 254, 0.7);
+}
+
+/* 信息提示列表 */
+.info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+}
+
+.info-icon {
+  font-size: 18px;
+}
+
+.info-text strong {
+  font-size: 12px;
+  color: var(--text-main);
+  display: block;
+}
+
+.info-text p {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+
+/* 底部操作区 */
+.app-footer {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.footer-btn {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--bg-card-border);
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.footer-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-main);
+}
+
+.footer-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}

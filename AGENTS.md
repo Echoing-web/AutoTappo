@@ -20,23 +20,13 @@
 
 通过对官方二进制程序（`D:\wuwatappo\WuwaTappo.exe`）以及解压缩的前端 JavaScript 代码的逆向分析，确认以下关键事实：
 
-### 2.1 统计数据存储与 XOR 混淆解密
-桌宠的本地数据位于 `%APPDATA%\com.kuro.wuwatappo.cn\`：
-1. **累计点击文件**：`cumulative_click_cn-cn-prod.dat`
-   - **XOR 混淆密钥**：`kuro-mc-cumulative-click-v1`
-   - **解密后结构**：`{"count": 1252, "cuid": "521924715", "environment": "cn-cn-prod"}`
-2. **按键统计文件**：`key_press_count_cn-cn-prod.dat`
-   - **XOR 混淆密钥**：`kuro-mc-keypress-store-v1`
-   - **解密后结构**：`{"t": 3, "environment": "cn-cn-prod"}`
-
-> **注**：Rust 后端可内置该密钥，实现启动时或定时读取用户真实的累计有效点击数，展示在看板上。
-
-### 2.2 官方输入监听与拍桌机制
+### 2.1 官方输入监听与拍桌机制
 - 官方基于 Rust 的 `rdev` 库安装了 Windows 全局低级输入钩子（`WH_KEYBOARD_LL` 与 `WH_MOUSE_LL`）；
 - 当系统捕获到键鼠动作时，Rust 后端向 WebView 抛送 `key-press`、`key-release`、`global-clap-mouse` 等事件；
 - **核心计数防刷规则**：
   - **长按同一个按键不会重复累加**（`Pr.has(e)` 去重），必须有交替击键或明确的松开事件（`key-release`）；
-  - 每满 999 次点击后归零并从当前装备表情中随机浮现一个气泡表情。
+  - 每满 999 次点击后归零并从当前装备表情中随机浮现一个气泡表情；
+  - 桌宠自身底栏已常驻显示总点击计数，因此 AutoTappo 无需重复跨文件解密反查，专注于本次会话发送量统计与纯静默后台守护。
 
 ### 2.3 官方硬编码快捷键（严重避坑指南！）
 桌宠前端源码中写死了系统级快捷键，**本项目必须严格避开**：
@@ -77,15 +67,14 @@ AutoTappo 计划使用 **Rust + Tauri v2 + Vanilla Web 前端** 进行重构：
 ```
 autotappo/
 ├── src-tauri/
-│   ├── Cargo.toml
-│   ├── tauri.conf.json
+│   ├── Cargo.toml         # 纯原生微依赖 (tauri v2, serde, serde_json, rand)
+│   ├── tauri.conf.json    # 配置 (包含 identifier, icons, frontendDist="../web", targets=["nsis"])
 │   └── src/
-│       ├── main.rs         # Tauri 应用启动入口与插件装配
-│       ├── tray.rs         # 托盘图标构建、事件绑定、右键菜单
-│       ├── window.rs       # 窗口生命周期管理 (按需创建 / 销毁以节约内存)
-│       ├── clicker.rs      # 后台极速连点引擎与礼貌避让逻辑 (独立线程)
-│       ├── decoder.rs      # 本地 XOR 统计文件解密读取
-│       └── commands.rs     # IPC 接口 (供前端调用的启停、改配置、读统计)
+│       ├── main.rs        # 入口、状态管理、窗口关闭拦截、ExitRequested拦截
+│       ├── tray.rs        # 托盘图标构建、事件绑定、右键菜单 (参考 CampusFlow)
+│       ├── window.rs      # 按需创建与销毁窗口 (释放 WebView2 内存)
+│       ├── clicker.rs     # 后台静默连点核心引擎 (独立线程、F21~F24交替、全场景礼貌避让、无鼠标位移)
+│       └── commands.rs    # IPC 接口 (供前端调用的启停、改配置、读写计数)
 ├── web/
 │   ├── index.html          # 精致看板 UI (仪表盘、档位切换、热键配置)
 │   ├── style.css           # 现代化玻璃拟态 / 极简科技风

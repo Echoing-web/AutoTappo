@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoTappo · 鸣潮桌宠后台挂机助手</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- 顶部标题栏 -->
+    <header class="app-header">
+      <div class="logo-area">
+        <span class="logo-icon">🐾</span>
+        <div class="logo-text">
+          <h1>AutoTappo</h1>
+          <span class="sub-title">WuwaTappo 后台助手</span>
+        </div>
+      </div>
+      <button id="btn-minimize" class="icon-btn" title="收进系统托盘">─</button>
+    </header>
+
+    <!-- 核心状态卡片 -->
+    <section class="status-card">
+      <div class="pulse-ring" id="status-ring"></div>
+      <div class="status-content">
+        <span class="status-badge" id="status-badge">已暂停</span>
+        <div class="sent-counter">
+          <span class="counter-label">本次模拟点击</span>
+          <div class="counter-row">
+            <span class="counter-value" id="counter-value">0</span>
+            <button id="btn-reset" class="mini-btn" title="清零本次计数">↺</button>
+          </div>
+        </div>
+      </div>
+      <button id="btn-toggle" class="main-toggle-btn">
+        <span id="btn-toggle-icon">▶</span>
+        <span id="btn-toggle-text">开始挂机</span>
+      </button>
+    </section>
+
+    <!-- 速度档位调节 -->
+    <section class="control-section">
+      <label class="section-label">⚡ 速度档位调节</label>
+      <div class="speed-selector">
+        <button class="speed-btn active" data-speed="0">
+          <span class="speed-title">休闲拟真</span>
+          <span class="speed-desc">~10 次/秒 · 办公推荐</span>
+        </button>
+        <button class="speed-btn" data-speed="1">
+          <span class="speed-title">快速进阶</span>
+          <span class="speed-desc">~25 次/秒 · 快速刷分</span>
+        </button>
+        <button class="speed-btn" data-speed="2">
+          <span class="speed-title">极速狂暴</span>
+          <span class="speed-desc">~50 次/秒 · 极限冲刺</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 特性与提示列表 -->
+    <section class="info-section">
+      <div class="info-item">
+        <span class="info-icon">⌨️</span>
+        <div class="info-text">
+          <strong>全局快捷键 [ F6 ] 或 [ F10 ]</strong>
+          <p>无需切换窗口，任何时候按键随时启停</p>
+        </div>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">🛡️</span>
+        <div class="info-text">
+          <strong>智能全场景避让保护</strong>
+          <p>打字、按 Shift 切换中英文或划词拖拽时自动秒停</p>
+        </div>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">🪟</span>
+        <div class="info-text">
+          <strong>关闭窗口自动收进托盘</strong>
+          <p>彻底释放界面内存，后台后台守护持续进行</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 底部控制栏 -->
+    <footer class="app-footer">
+      <button id="btn-hide" class="footer-btn">收进托盘</button>
+      <button id="btn-quit" class="footer-btn danger">退出程序</button>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
