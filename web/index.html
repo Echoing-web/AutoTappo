@@ -24,7 +24,7 @@
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
           <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
         </svg>
-        <span class="version-text">v0.2.0</span>
+        <span class="version-text">v0.3.0</span>
         <span class="update-dot" id="update-dot"></span>
       </button>
     </header>
@@ -33,7 +33,7 @@
     <section class="status-card">
       <div class="pulse-ring" id="status-ring"></div>
       <div class="status-content">
-        <span class="status-badge" id="status-badge">已暂停</span>
+        <span class="status-badge" id="status-badge" role="status">已暂停</span>
         <div class="sent-counter">
           <span class="counter-label">本次模拟点击</span>
           <div class="counter-row">
@@ -101,11 +101,11 @@
             <strong class="fp-title">自动开箱</strong>
             <span class="fp-tag" id="auto-box-tag">未开启</span>
           </div>
-          <p class="fp-desc" id="auto-box-desc">宝箱就绪自动领取 · 每箱消耗 1,000 字符数</p>
+          <p class="fp-desc" id="auto-box-desc" role="status">宝箱就绪自动领取 · 每箱消耗 1,000 字符数</p>
         </div>
       </div>
       <div class="fp-status">
-        <button id="btn-auto-box" class="ab-toggle" type="button" role="switch" aria-checked="false" title="开启 / 关闭自动开箱">
+        <button id="btn-auto-box" class="ab-toggle" type="button" aria-pressed="false" title="开启 / 关闭自动开箱">
           <span class="ab-knob"></span>
         </button>
       </div>
@@ -134,7 +134,7 @@
         <div class="modal-body">
           <div class="version-row">
             <span class="v-label">当前运行版本</span>
-            <span class="v-val current" id="lbl-cur-version">v0.2.0</span>
+            <span class="v-val current" id="lbl-cur-version">v0.3.0</span>
           </div>
           <div class="version-row">
             <span class="v-label">最新发布版本</span>

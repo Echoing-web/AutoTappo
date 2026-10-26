@@ -3,7 +3,7 @@
 (function () {
   "use strict";
 
-  const CURRENT_VERSION = "v0.2.0";
+  const CURRENT_VERSION = "v0.3.0";
   const GITEE_API_URL = "https://gitee.com/api/v5/repos/To0Ru/AutoTappo/releases/latest";
   const GITHUB_API_URL = "https://api.github.com/repos/To0Ru/AutoTappo/releases/latest";
 
@@ -89,6 +89,11 @@
   if (lblCurVersion) lblCurVersion.textContent = CURRENT_VERSION;
   if (lblHotkey) lblHotkey.textContent = currentHotkeyName;
 
+  // 仅在内容变化时写入 DOM：500ms 状态轮询下避免无谓的节点替换与样式失效（微卡顿来源）
+  function setText(el, text) {
+    if (el && el.textContent !== text) el.textContent = text;
+  }
+
   // 更新主界面 UI
   function updateUI(status) {
     if (!status) return;
@@ -100,29 +105,27 @@
     // 1. 运行状态徽章
     if (statusBadge) {
       if (currentRunning) {
-        statusBadge.textContent = "运行中";
+        setText(statusBadge, "运行中");
         statusBadge.classList.add("running");
       } else {
-        statusBadge.textContent = "已暂停";
+        setText(statusBadge, "已暂停");
         statusBadge.classList.remove("running");
       }
     }
 
     // 2. 模拟点击计数
-    if (counterValue) {
-      counterValue.textContent = localSentCount.toLocaleString();
-    }
+    setText(counterValue, localSentCount.toLocaleString());
 
     // 3. 大按钮状态
     if (btnToggle && btnToggleText && btnToggleIcon) {
       if (currentRunning) {
         btnToggle.classList.add("running");
-        btnToggleIcon.textContent = "⏸";
-        btnToggleText.textContent = `暂停挂机 (${currentHotkeyName})`;
+        setText(btnToggleIcon, "⏸");
+        setText(btnToggleText, `暂停挂机 (${currentHotkeyName})`);
       } else {
         btnToggle.classList.remove("running");
-        btnToggleIcon.textContent = "▶";
-        btnToggleText.textContent = `开始挂机 (${currentHotkeyName})`;
+        setText(btnToggleIcon, "▶");
+        setText(btnToggleText, `开始挂机 (${currentHotkeyName})`);
       }
     }
 
@@ -153,34 +156,36 @@
   function renderAutoBoxUI() {
     if (btnAutoBox) {
       btnAutoBox.classList.toggle("on", autoBoxEnabled);
-      btnAutoBox.setAttribute("aria-checked", autoBoxEnabled ? "true" : "false");
+      btnAutoBox.setAttribute("aria-pressed", autoBoxEnabled ? "true" : "false");
     }
     if (autoBoxCard) {
       autoBoxCard.classList.toggle("active", autoBoxEnabled);
     }
     if (autoBoxTag) {
-      autoBoxTag.textContent = autoBoxEnabled ? "运行中" : "未开启";
+      setText(autoBoxTag, autoBoxEnabled ? "运行中" : "未开启");
     }
     if (autoBoxDesc) {
+      let desc;
       if (!autoBoxEnabled) {
-        autoBoxDesc.textContent = "宝箱就绪自动领取 · 每箱消耗 1,000 字符数";
+        desc = "宝箱就绪自动领取 · 每箱消耗 1,000 字符数";
       } else {
         switch (autoBoxStatus) {
           case AB_FOUND:
-            autoBoxDesc.textContent = "发现就绪宝箱，正在开启…";
+            desc = "发现就绪宝箱，正在开启…";
             break;
           case AB_OPENED:
-            autoBoxDesc.textContent = `监测中 · 已自动开箱 ${autoBoxOpens.toLocaleString()} 次`;
+            desc = `监测中 · 已自动开箱 ${autoBoxOpens.toLocaleString()} 次`;
             break;
           case AB_BACKOFF:
-            autoBoxDesc.textContent = "点数不足或暂不可开，稍后自动重试…";
+            desc = "点数不足或暂不可开，稍后自动重试…";
             break;
           case AB_WATCHING:
           default:
-            autoBoxDesc.textContent = "监测中，发现宝箱将自动开启…";
+            desc = "监测中，发现宝箱将自动开启…";
             break;
         }
       }
+      setText(autoBoxDesc, desc);
     }
   }
 
@@ -211,7 +216,7 @@
       previewInterval = setInterval(() => {
         if (currentRunning) {
           localSentCount += 1;
-          if (counterValue) counterValue.textContent = localSentCount.toLocaleString();
+          setText(counterValue, localSentCount.toLocaleString());
         }
       }, speedIntervals[currentSpeed] || 100);
 
