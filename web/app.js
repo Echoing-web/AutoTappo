@@ -41,6 +41,9 @@ const updateStatusText = document.getElementById("update-status-text");
 const updateSpinner = document.getElementById("update-spinner");
 const changelogArea = document.getElementById("changelog-area");
 const changelogContent = document.getElementById("changelog-content");
+const updateGuideCard = document.getElementById("update-guide-card");
+const linkGithubRepo = document.getElementById("link-github-repo");
+const lblGithubRepoUrl = document.getElementById("lbl-github-repo-url");
 const btnCheckNow = document.getElementById("btn-check-now");
 const btnCheckText = document.getElementById("btn-check-text");
 const btnDownload = document.getElementById("btn-download");
@@ -58,6 +61,8 @@ let currentHotkeyName = localStorage.getItem("autotappo_hotkey_name") || "F6";
 let currentHotkeyVK = parseInt(localStorage.getItem("autotappo_hotkey_vk"), 10) || 0x75;
 let isRecordingHotkey = false;
 
+const versionText = document.querySelector(".version-text");
+if (versionText) versionText.textContent = CURRENT_VERSION;
 lblCurVersion.textContent = CURRENT_VERSION;
 lblHotkey.textContent = currentHotkeyName;
 
@@ -384,6 +389,7 @@ async function checkUpdate({ silent = false } = {}) {
     btnCheckNow.disabled = true;
     btnCheckText.textContent = "正在检查...";
     changelogArea.style.display = "none";
+    if (updateGuideCard) updateGuideCard.style.display = "none";
     btnDownload.style.display = "none";
   }
 
@@ -436,19 +442,28 @@ function applyUpdateData(result, silent = false) {
     if (cmp > 0) {
       updateDot.classList.add("active");
       updateStatusBox.className = "update-status-box has-new";
-      updateStatusText.textContent = `🎉 发现新版本 ${latestTag} (${source} 源)`;
+      updateStatusText.innerHTML = `🎉 <strong>发现新版本 ${latestTag} (${source} 源)</strong>`;
 
       const body = latestData.body || latestData.description || "包含稳定性优化与体验升级。";
       changelogContent.textContent = body;
       changelogArea.style.display = "block";
 
-      btnDownload.href = latestData.html_url || "https://github.com/To0Ru/AutoTappo/releases/latest";
+      // 明确给出 GitHub 仓库地址与安装提示
+      const repoUrl = latestData.html_url || "https://github.com/To0Ru/AutoTappo/releases";
+      if (updateGuideCard) {
+        updateGuideCard.style.display = "flex";
+        linkGithubRepo.href = repoUrl;
+        lblGithubRepoUrl.textContent = repoUrl;
+      }
+
+      btnDownload.href = repoUrl;
       btnDownload.style.display = "inline-flex";
     } else {
       updateDot.classList.remove("active");
       updateStatusBox.className = "update-status-box is-latest";
       updateStatusText.textContent = `✨ 当前已是最新版本！(${source} 源同步)`;
       changelogArea.style.display = "none";
+      if (updateGuideCard) updateGuideCard.style.display = "none";
       btnDownload.style.display = "none";
     }
   } else {
@@ -457,6 +472,7 @@ function applyUpdateData(result, silent = false) {
     updateStatusBox.className = "update-status-box is-latest";
     updateStatusText.textContent = `✨ 当前运行版本 ${CURRENT_VERSION} 已是最新稳定版！`;
     changelogArea.style.display = "none";
+    if (updateGuideCard) updateGuideCard.style.display = "none";
     btnDownload.style.display = "none";
   }
 }
@@ -484,3 +500,16 @@ pollStatus();
 if (isTauri) {
   setInterval(pollStatus, 500);
 }
+
+// 方便在纯浏览器独立预览时随时测试“发现新版本”的视觉效果
+window.testNewVersionUI = function() {
+  openUpdateModal();
+  applyUpdateData({
+    data: {
+      tag_name: "v0.2.0",
+      html_url: "https://github.com/To0Ru/AutoTappo/releases",
+      body: "1. 新增【自动开箱】功能，满额自动抽卡\n2. 优化后台静默避让策略，提升长时间挂机稳定性\n3. 支持更多自定义全局快捷键"
+    },
+    source: "Gitee"
+  });
+};

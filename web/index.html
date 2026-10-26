@@ -17,9 +17,14 @@
           <span class="sub-title">WuwaTappo 智能挂机</span>
         </div>
       </div>
-      <!-- 右上角铃铛更新按钮 -->
-      <button id="btn-bell" class="icon-btn bell-btn" title="检查更新与版本信息">
-        <span class="bell-icon">🔔</span>
+      
+      <!-- 右上角：极简无感版本胶囊与更新指示器 (告别突兀黄色，融入暗色美学) -->
+      <button id="btn-bell" class="version-badge-btn" title="点击检查更新与版本日志">
+        <svg class="bell-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="version-text">v0.1.0</span>
         <span class="update-dot" id="update-dot"></span>
       </button>
     </header>
@@ -45,7 +50,9 @@
 
     <!-- 速度档位调节 -->
     <section class="control-section">
-      <label class="section-label">⚡ 速度档位调节</label>
+      <div class="section-header-row">
+        <span class="section-label">⚡ 速度档位调节</span>
+      </div>
       <div class="speed-selector">
         <button class="speed-btn active" data-speed="0">
           <span class="speed-title">休闲拟真</span>
@@ -65,7 +72,10 @@
     <!-- 可自定义全局热键胶囊 -->
     <div class="hotkey-pill" id="hotkey-pill">
       <div class="hotkey-left">
-        <span class="hotkey-icon">⌨️</span>
+        <svg class="pill-svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="3"></rect>
+          <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M18 12h.01M8 16h8"></path>
+        </svg>
         <span class="hotkey-label">全局启停热键</span>
       </div>
       <div class="hotkey-right">
@@ -73,6 +83,29 @@
           <span id="lbl-hotkey">F6</span>
         </button>
         <span class="hotkey-tip" id="hotkey-tip">点击修改</span>
+      </div>
+    </div>
+
+    <!-- 待支持功能卡片：自动开箱 -->
+    <div class="feature-preview-card" title="自动开箱功能将在后续版本更新中上线">
+      <div class="fp-left">
+        <div class="fp-icon-wrap">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="21 8 21 21 3 21 3 8"></polyline>
+            <rect x="1" y="3" width="22" height="5"></rect>
+            <line x1="10" y1="12" x2="14" y2="12"></line>
+          </svg>
+        </div>
+        <div class="fp-text">
+          <div class="fp-title-row">
+            <strong class="fp-title">自动开箱</strong>
+            <span class="fp-tag">待支持</span>
+          </div>
+          <p class="fp-desc">满额自动开箱抽取表情与配件，后续版本上线</p>
+        </div>
+      </div>
+      <div class="fp-status">
+        <span class="fp-lock">规划中</span>
       </div>
     </div>
 
@@ -87,7 +120,10 @@
       <div class="modal-card">
         <div class="modal-header">
           <div class="modal-title-area">
-            <span class="modal-icon">🔔</span>
+            <svg class="modal-title-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
             <h3>版本与更新</h3>
           </div>
           <button class="modal-close-btn" id="btn-modal-close">✕</button>
@@ -108,6 +144,21 @@
             <p id="update-status-text">点击下方按钮获取最新版本信息</p>
           </div>
 
+          <!-- 当有新版本时显示的 GitHub 仓库下载安装指引 -->
+          <div class="update-guide-card" id="update-guide-card" style="display: none;">
+            <div class="guide-header">
+              <span class="guide-tag">新版安装指引</span>
+              <span class="guide-tip">请前往 GitHub 仓库下载并安装新版本：</span>
+            </div>
+            <a id="link-github-repo" class="github-repo-url" href="https://github.com/To0Ru/AutoTappo/releases" target="_blank" title="点击在浏览器中打开 GitHub 仓库">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"></path>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+              <span id="lbl-github-repo-url">https://github.com/To0Ru/AutoTappo/releases</span>
+            </a>
+          </div>
+
           <div class="changelog-area" id="changelog-area" style="display: none;">
             <label class="cl-title">新版本亮点：</label>
             <div class="cl-content" id="changelog-content"></div>
@@ -120,7 +171,7 @@
             <span id="btn-check-text">立即检查更新</span>
           </button>
           <a id="btn-download" class="modal-btn action" href="https://github.com/To0Ru/AutoTappo/releases" target="_blank" style="display: none;">
-            前往下载新版 ↗
+            前往 GitHub 仓库安装新版 ↗
           </a>
         </div>
       </div>

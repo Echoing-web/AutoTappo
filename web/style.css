@@ -1,10 +1,13 @@
 /* ==========================================================================
-   AutoTappo 现代化深色玻璃拟态 UI (支持独立浏览器预览与热键录制)
+   AutoTappo 现代化暗色高级玻璃拟态 UI (精修版)
+   - 彻底移除了刺眼的 Windows 黄色 Emoji 铃铛
+   - 采用精致单色几何矢量 SVG + 优雅版本徽章
+   - 细腻磨砂质感与冷青光晕呼吸动效
    ========================================================================== */
 
 :root {
   --bg-primary: #0a0e17;
-  --bg-card: rgba(20, 27, 41, 0.82);
+  --bg-card: rgba(20, 27, 41, 0.78);
   --bg-card-border: rgba(255, 255, 255, 0.08);
   --accent-cyan: #00f2fe;
   --accent-blue: #38bdf8;
@@ -46,8 +49,8 @@ body {
   width: 100%;
   max-width: 440px;
   padding: 16px 20px 14px;
-  background: radial-gradient(circle at 85% 15%, rgba(0, 242, 254, 0.12), transparent 45%),
-              radial-gradient(circle at 15% 85%, rgba(139, 92, 246, 0.10), transparent 50%),
+  background: radial-gradient(circle at 85% 12%, rgba(0, 242, 254, 0.10), transparent 45%),
+              radial-gradient(circle at 15% 85%, rgba(139, 92, 246, 0.08), transparent 50%),
               var(--bg-primary);
   position: relative;
 }
@@ -69,10 +72,10 @@ body {
 .app-logo {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: 9px;
   object-fit: cover;
-  filter: drop-shadow(0 2px 10px rgba(0, 242, 254, 0.4));
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  filter: drop-shadow(0 2px 10px rgba(0, 242, 254, 0.35));
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .logo-text h1 {
@@ -89,51 +92,69 @@ body {
   color: var(--text-muted);
 }
 
-/* 铃铛按钮 */
-.bell-btn {
+/* 右上角：精致无感版本胶囊与更新指示器 (替换原先突兀的黄色 Emoji) */
+.version-badge-btn {
   position: relative;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--bg-card-border);
-  color: var(--text-muted);
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 5px 10px 5px 9px;
+  border-radius: 20px;
+  color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.25s ease;
-  font-size: 15px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-.bell-btn:hover {
-  background: rgba(0, 242, 254, 0.15);
+.version-badge-btn:hover {
+  background: rgba(0, 242, 254, 0.10);
   border-color: rgba(0, 242, 254, 0.35);
   color: var(--accent-cyan);
-  transform: scale(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 242, 254, 0.2);
 }
 
+.bell-svg {
+  color: inherit;
+  transition: transform 0.25s ease;
+}
+
+.version-badge-btn:hover .bell-svg {
+  transform: rotate(15deg);
+}
+
+.version-text {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: Consolas, -apple-system, sans-serif;
+  letter-spacing: 0.2px;
+}
+
+/* 红点：精致外发光呼吸动画 */
 .update-dot {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: -2px;
+  right: -2px;
   width: 7px;
   height: 7px;
   background: #ef4444;
   border-radius: 50%;
   border: 1.5px solid var(--bg-primary);
+  box-shadow: 0 0 8px #ef4444;
   display: none;
 }
 
 .update-dot.active {
   display: block;
-  animation: pulse-dot 1.5s infinite;
+  animation: pulse-dot 1.8s infinite cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 @keyframes pulse-dot {
-  0% { transform: scale(0.9); opacity: 0.8; }
-  50% { transform: scale(1.3); opacity: 1; }
-  100% { transform: scale(0.9); opacity: 0.8; }
+  0% { transform: scale(0.9); opacity: 0.8; box-shadow: 0 0 4px #ef4444; }
+  50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 10px #ef4444; }
+  100% { transform: scale(0.9); opacity: 0.8; box-shadow: 0 0 4px #ef4444; }
 }
 
 /* 核心状态卡片 */
@@ -148,7 +169,7 @@ body {
   gap: 14px;
   backdrop-filter: blur(16px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   overflow: hidden;
 }
 
@@ -163,9 +184,9 @@ body {
   font-weight: 600;
   padding: 4px 12px;
   border-radius: 20px;
-  background: rgba(100, 116, 139, 0.2);
+  background: rgba(100, 116, 139, 0.16);
   color: var(--text-muted);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.18);
   transition: all 0.3s ease;
 }
 
@@ -255,15 +276,16 @@ body {
 
 /* 速度选择器 */
 .control-section {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .section-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-muted);
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 7px;
+  letter-spacing: 0.3px;
 }
 
 .speed-selector {
@@ -276,11 +298,11 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--bg-card-border);
   border-radius: var(--radius-md);
-  padding: 10px 6px;
+  padding: 9px 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   cursor: pointer;
   color: var(--text-muted);
   transition: all 0.2s ease;
@@ -292,10 +314,10 @@ body {
 }
 
 .speed-btn.active {
-  background: rgba(0, 242, 254, 0.10);
+  background: rgba(0, 242, 254, 0.09);
   border-color: var(--accent-cyan);
   color: var(--accent-cyan);
-  box-shadow: 0 0 14px rgba(0, 242, 254, 0.2);
+  box-shadow: 0 0 14px rgba(0, 242, 254, 0.18);
 }
 
 .speed-title {
@@ -317,12 +339,12 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 14px;
+  padding: 8px 12px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-md);
   font-size: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 8px;
   transition: border-color 0.2s ease;
 }
 
@@ -333,12 +355,13 @@ body {
   color: var(--text-muted);
 }
 
-.hotkey-icon {
-  font-size: 16px;
+.pill-svg {
+  color: var(--text-dim);
 }
 
 .hotkey-label {
   font-weight: 500;
+  font-size: 12px;
 }
 
 .hotkey-right {
@@ -352,12 +375,12 @@ body {
   border: 1px solid rgba(0, 242, 254, 0.3);
   color: var(--accent-cyan);
   font-family: Consolas, monospace;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  padding: 4px 10px;
+  padding: 3px 9px;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  min-width: 44px;
+  min-width: 42px;
   text-align: center;
   transition: all 0.2s ease;
 }
@@ -386,19 +409,96 @@ body {
   color: var(--text-dim);
 }
 
+/* 待支持功能卡片：自动开箱 (精致暗夜紫微光，与整体科技感完美统一) */
+.feature-preview-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(139, 92, 246, 0.04);
+  border: 1px dashed rgba(139, 92, 246, 0.25);
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+  transition: all 0.2s ease;
+}
+
+.feature-preview-card:hover {
+  background: rgba(139, 92, 246, 0.08);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.fp-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fp-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(139, 92, 246, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a78bfa;
+}
+
+.fp-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fp-title {
+  font-size: 12px;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.fp-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(139, 92, 246, 0.16);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  color: #c4b5fd;
+}
+
+.fp-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+
+.fp-status {
+  display: flex;
+  align-items: center;
+}
+
+.fp-lock {
+  font-size: 10px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
 /* 底部操作区 */
 .app-footer {
   display: flex;
   gap: 10px;
   margin-top: auto;
-  padding-top: 6px;
+  padding-top: 2px;
 }
 
 .footer-btn {
   flex: 1;
   padding: 9px 0;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--bg-card-border);
   color: var(--text-muted);
   font-size: 12px;
@@ -408,13 +508,13 @@ body {
 }
 
 .footer-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.10);
   color: var(--text-main);
 }
 
 .footer-btn.danger:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.35);
   color: #f87171;
 }
 
@@ -428,7 +528,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(5, 8, 15, 0.72);
   backdrop-filter: blur(8px);
   display: none;
   justify-content: center;
@@ -446,11 +546,11 @@ body {
 
 .modal-card {
   width: 100%;
-  background: #141c2b;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #121927;
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: var(--radius-lg);
   padding: 18px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
   transform: translateY(10px);
   transition: transform 0.25s ease;
   display: flex;
@@ -474,8 +574,8 @@ body {
   gap: 8px;
 }
 
-.modal-icon {
-  font-size: 18px;
+.modal-title-svg {
+  color: var(--accent-cyan);
 }
 
 .modal-title-area h3 {
@@ -557,6 +657,60 @@ body {
   border-color: rgba(16, 185, 129, 0.4);
   background: rgba(16, 185, 129, 0.08);
   color: #34d399;
+}
+
+/* 新版本安装指引卡片与 GitHub 链接 */
+.update-guide-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0, 242, 254, 0.05);
+  border: 1px solid rgba(0, 242, 254, 0.22);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.guide-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.guide-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(0, 242, 254, 0.18);
+  color: var(--accent-cyan);
+}
+
+.guide-tip {
+  font-size: 11px;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.github-repo-url {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--accent-blue);
+  font-family: Consolas, monospace;
+  text-decoration: none;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  word-break: break-all;
+  transition: all 0.2s ease;
+}
+
+.github-repo-url:hover {
+  color: var(--accent-cyan);
+  border-color: rgba(0, 242, 254, 0.4);
+  background: rgba(0, 242, 254, 0.1);
 }
 
 .changelog-area {
