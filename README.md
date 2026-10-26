@@ -48,7 +48,7 @@
 
 ## 📥 下载安装
 
-前往本仓库的 [**Releases**](https://github.com/) 页面下载最新版本：
+前往本仓库的 [**Releases**](https://github.com/To0Ru/AutoTappo/releases/latest) 页面下载最新版本：
 
 | 文件 | 类型 | 说明 |
 | :--- | :---: | :--- |
@@ -92,7 +92,7 @@
 ### 2. 获取代码与安装 Tauri CLI
 ```bash
 # 克隆仓库
-git clone https://github.com/your-username/autotappo.git
+git clone https://github.com/To0Ru/AutoTappo.git
 cd autotappo
 
 # 安装 Tauri v2 命令行工具（如尚未安装）
