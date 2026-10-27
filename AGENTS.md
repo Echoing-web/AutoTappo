@@ -38,104 +38,6 @@
 
 > **规范**：AutoTappo 全局热键默认选用 **`F6`**，且提供全键盘自定义录制，但系统内部硬编码拦截 `F7`、`F8`、`F9` 防止冲突。
 
-### 2.3 宝箱机制与窗口结构深度逆向（关键突破）
-通过 Brotli 逆向解包 `WuwaTappo.exe` 内嵌前端资源（`index-D8GJxFG7.js`、`index-DmC0wUEw.js`、`index-BjTCKBy6.css`），全面查明宝箱触发、DOM 布局与窗口渲染机理：
-- **宝箱解锁与出现阈值**：
-  - 累计点击 `< 1000`（`As = 1e3`）：宝箱挂件完全隐藏；
-  - `1000 <= 累计点击 < 2000`（`by = 2e3`）：单宝箱解锁（左侧优先，左侧在 CD 倒计时中则显示右侧）；
-  - `累计点击 >= 2000`：双宝箱全部解锁。
-- **状态维护与判定**：
-  - 倒计时时间戳：`left_treasure_chest`、`right_treasure_chest`（Unix 毫秒）；
-  - 冷却就绪条件：`qn = jt <= 0`（左就绪），`Un = $t <= 0`（右就绪）；
-  - 冷却期挂载倒计时组件：`<mu :progress="gp" :text="mp" />`；
-  - 冷却就绪后生成按钮：`<button class="reward-btn" onClick="zl('left'|'right')"></button>`。
-- **DOM 挂载与坐标相对偏移**：
-  - 左宝箱：`.reward-anchor--left`（CSS：`right: -36px; bottom: 24px;`）；
-  - 右宝箱：`.reward-anchor--right`（CSS：`right: -46px; bottom: 72px;`）。
-- **全屏透明图层与 GetWindowRgn 穿透机制（重大发现）**：
-  - 官方桌宠的 `Tauri Window`（类名 `Tauri Window`，标题 `Wuwa Tappo`）实际上是一个**覆盖整个显示器全屏的透明窗口**（如 `(0, 0, 1769, 1179)`）；
-  - 严禁使用普通的 `GetWindowRect` 来定位桌宠，否则只能得到全屏尺寸；
-  - **动态定位机理**：官方通过 IPC `set_main_hit_region` 调用 Windows GDI `SetWindowRgn` 对窗口实施多边形裁切，仅桌宠身体及可交互按钮区域具有物理区域；
-  - **AutoTappo 定位方案**：直接调用 Windows API `GetWindowRgn` / `GetRegionData` 读取桌宠的非穿透区域包围盒 `rcBound` 与各子矩形。无论用户如何拖拽桌宠、按 `F8` 切屏、调整桌宠缩放比例或系统 DPI 缩放，均可毫秒级 100% 自动精确锁定桌宠与宝箱的物理位置，无需任何人工死板坐标！
-- **开箱行为安全红线（严禁伪造发包）**：
-  - 官方开箱调用链为：`zl(place)` -> `openChest({ place, click_num })` -> `jsonpClient.post("api/frontend/chests/open", ...)`；
-  - **绝对安全准则**：严禁在 AutoTappo 外部模拟 HTTP/jsonp 请求发包，避免 Cookie、Session Token 或设备指纹异常导致官方反作弊风控封号；
-  - **安全落地准则**：必须通过 Windows 原生 UI/消息流在桌宠真实的 Hit Region 坐标区域触发轻量交互，由官方 WebView 自身执行正规鉴权请求。
-
-### 2.4 自动开箱机制（实机验证结论 · 以此为准）
-
-> 以下结论来自真机实测（100% / 150% / 175% 三种 DPI、单屏与双屏、桌宠左移/右下/右上多位置），优先级高于任何推测。
-
-**① 真实点击接收窗口不是主窗口**
-
-- 视觉层 `FindWindowW("Tauri Window", "Wuwa Tappo")` 带 `WS_EX_LAYERED | WS_EX_TRANSPARENT`，**永远点击穿透**，只负责渲染；
-- 真正接收点击的是独立顶层窗口，类名 **`DesktopCatInput`**（owner 为 Tauri 主窗）；
-- 必须用 `EnumWindows` 按类名匹配，`FindWindowW` 找不到它；主窗口是全屏尺寸，`GetWindowRect` 无法定位桌宠。
-
-**② 坐标体系（三个必须遵守的换算）**
-
-| 量 | 坐标系 | 说明 |
-| :-- | :-- | :-- |
-| `GetWindowRgn` / `GetRegionData` 矩形 | **窗口相对** | 必须加窗口原点才是屏幕坐标 |
-| 窗口原点 | `GetWindowRect(DesktopCatInput)` | 多屏时可为负数（副屏实测 `(1920, −261)`） |
-| `PostMessage` 的 lParam | **客户区坐标** | 无边框全屏窗口，客户区原点 == 窗口原点 |
-
-**③ 区域是拼图式矩形并集，不是“一整块可点区”**
-
-- 原始矩形是扫描线分解结果：锚点与桌宠本体相邻时会被**合并成一个矩形**；
-- 因此不能靠“某个矩形更靠右”识别锚点，必须用**逐行右边界剖面 + 平台 + 与锚点同一批行的本体右缘（取众数）**；
-- 房间里可能同时有多只猫（自己的 + 好友的），**必须先按 x 区间重叠聚类**再逐簇分析。
-
-**④ 就绪状态无法从窗口区域判断（重要纠正）**
-
-- 就绪（礼物按钮）与冷却（倒计时气泡）两种状态下**区域矩形完全相同**（都是 62×44 的锚点框），`WindowFromPoint` 也都返回 `DesktopCatInput`；
-- 所以「用 `GetWindowRgn` 检测 `reward-btn` 碰撞体是否存在」**是错的**，早期版本文档的该说法已废弃；
-- 正确做法是对锚点框做**像素采样判定**（见 ⑥）。
-
-**⑤ 锚点几何由 CSS 比例常数唯一确定（跨分辨率/DPI 的根基）**
-
-- 反解公式：`(锚点右缘 − 本体右缘) / 46`（右锚点）或 `/ 36`（左锚点）**必须等于** `锚点框高度 / 44`，三者解出同一个缩放系数 `s`；
-- 实测 `s` 精确等于 `DPI / 96`（100%→1.0，150%→1.5，175%→1.773）；
-- 自校验不通过就**拒绝点击**（官方改版时的安全失败路径）；
-- 官方夹取桌宠位置时**为锚点预留了 `46×s` 的外伸余量**，所以贴屏幕右下角极限位置也不会裁切（实测贴边后几何不变）。
-
-**⑥ 就绪判定的像素判据**
-
-- 锚点框内**内缩 12%** 排除圆角与阴影，统计两个比例：
-  - `warm`：`r>180 && (r-b)>45 && (r-g)>10`（礼物气泡为暖橙实心块）；
-  - `white`：`r>235 && g>230 && b>215`（倒计时气泡为奶白色）；
-- 实测分离度：就绪 `warm≈0.65 / white≈0.00`，冷却 `warm≈0.12 / white≈0.47~0.72`；
-- 判据：`warm ≥ 0.30 && white < 0.15` → 就绪；`white ≥ 0.15` → 冷却；其余 → 未知（**未知一律不点**）。
-
-**⑦ 权限：开箱必须与官方同等完整性**
-
-- 官方 exe 清单写死 `requestedExecutionLevel level="requireAdministrator"`，**永远以管理员运行**；
-- 挂机连点走 `keybd_event` 全局键盘事件（官方用 `WH_KEYBOARD_LL` 全局钩子接收），**不受 UIPI 拦截**，普通权限即可；
-- 开箱必须把消息**定向发送到具体 HWND**（`PostMessage`），跨完整性等级会被 UIPI 拒绝（`GetLastError = 5`），**所以必须提权**；
-- 开箱没有键盘后路（官方未提供开箱热键）。
-
-**⑧ 遮挡与不可用状态**
-
-- 桌宠视觉层是 `TOPMOST`，普通窗口不会遮挡它；**只有 z 序中排在桌宠之前的窗口**才算遮挡；
-- 必须排除两类假阳性：**桌宠自己进程的窗口**（输入层/Toast/面板）、**`WS_EX_TRANSPARENT` 点击穿透全屏覆盖层**（远控、手写画布等）；
-- **模块面板打开时 `GetWindowRgn` 返回 ERROR（窗口无区域）** → 定位为空 → 自动跳过。
-
-**⑨ 跨屏后的短暂不一致（靠“点后验证”兜底）**
-
-- `F8` 跨屏（尤其两屏 DPI 不同）后可能**区域与绘制短暂不一致**，像素判定会变“未知”；
-- 应对：**每轮重新读区域（绝不缓存）** + **点击后 350 ms 复查**（区域哈希变化且不再就绪才算成功），失败降频重试。
-
-**⑩ 资源占用（常驻场景实测）**
-
-| 操作 | 单次耗时 |
-| :-- | :-- |
-| `GetWindowRgn` + `GetRegionData` | **21 µs** |
-| 区域解析找锚点 | < 50 µs（Rust） |
-| z 序遮挡检查 | < 30 µs（Rust） |
-| 原生 `BitBlt` 抓 62×44 小块 | 1~3 ms（仅在决策时刻） |
-
-- 稳态每 30 分钟仅唤醒约 40 次，CPU 占用 ~0.005%；**绝不可每轮截图**（PIL 全屏抓取实测 ~100 ms，会显著吃 CPU）。
-
 ---
 
 ## 3. 防干扰与输入拟真技术规范
@@ -173,20 +75,23 @@ autotappo/
 │   └── build.yml          # GitHub Actions 自动化 CI 流水线 (推送/打Tag自动编译产出便携版与NSIS安装包)
 ├── src-tauri/
 │   ├── Cargo.toml         # 原生轻量依赖 (tauri v2, serde, rand)
-│   ├── tauri.conf.json    # 配置 (ID: com.autotappo.desktop, 图标, bundle/nsis, 无窗口尺寸——尺寸在 window.rs)
+│   ├── tauri.conf.json    # 配置 (ID: com.tooru.autotappo, 图标, 窗口尺寸 440x510)
 │   ├── capabilities/      # Tauri v2 权限配置
 │   └── src/
-│       ├── main.rs        # 程序入口、DPI感知初始化、模块装配、窗口拦截、ExitRequested保护
+│       ├── main.rs        # 程序入口、窗口拦截(CloseRequested销毁窗口)、ExitRequested保护
 │       ├── tray.rs        # 托盘图标、左键单击呼出、托盘右键上下文菜单
-│       ├── window.rs      # 按需创建与销毁主窗口 (452x620，彻底释放 WebView2 渲染内存)
+│       ├── window.rs      # 按需创建与销毁主窗口 (彻底释放 WebView2 渲染内存)
 │       ├── clicker.rs     # 后台静默连点工作线程 (F21~F24发射、礼貌避让、动态热键监听)
-│       ├── chest.rs       # 自动开箱引擎 (窗口发现/区域读取/锚点定位/遮挡检测/像素判定/点击注入)
-│       └── commands.rs    # IPC 接口 (get_status, toggle_running, set_speed, set_hotkey, reset_count, minimize, quit, get_chest_status, set_auto_chest, relaunch_as_admin)
+│       ├── box_logic.rs   # 自动开箱决策纯逻辑 (零 Win32 依赖，BDD 22 用例覆盖)
+│       ├── box_opener.rs  # 自动开箱工作线程 (UIA 读倒计时精准唤醒、后台无鼠标触发)
+│       └── commands.rs    # IPC 接口 (get_status, toggle_running, set_speed, set_hotkey, set_auto_box, reset_count, minimize, quit)
 ├── web/
-│   ├── index.html         # 精致看板 UI (状态卡片、三档速度、自定义热键胶囊、自动开箱控制卡、更新弹窗)
+│   ├── index.html         # 精致看板 UI (状态卡片、三档速度、自定义热键胶囊、自动开箱开关、更新弹窗)
 │   ├── style.css          # 现代化玻璃拟态 UI (移除刺眼彩色Emoji，全单色几何矢量SVG，细腻微光动画)
-│   ├── app.js             # 前端控制逻辑 (纯浏览器独立双击预览模式、Gitee/GitHub双通道检测、热键录制、开箱状态轮询)
+│   ├── app.js             # 前端控制逻辑 (纯浏览器独立双击预览模式、Gitee/GitHub双通道检测、热键录制)
 │   └── logo.png           # 高清矢量 Logo
+├── src-tauri/tests/       # BDD 集成测试 (bdd_box_logic.rs 22 用例) + 实机 E2E 冒烟 (local-e2e.ps1，优先 pwsh7)
+├── SPEC.md                # SDD 规格与验收矩阵 (v0.3.0)
 ├── README.md              # 纯用户端说明文档 (CampusFlow 风格)
 └── AGENTS.md              # 开发者与 Agent 架构知识库 (本文件)
 ```
@@ -210,74 +115,68 @@ autotappo/
    - 若 Gitee 404 或网络波动，无缝降级到 GitHub API 兜底；
    - **界面唤醒自动检测**：每次从托盘点出界面时后台静默查验（内置 60 秒防抖），发现新版时右上角版本胶囊自动出现呼吸发光红点；
    - 弹窗内明确展示 **GitHub 仓库下载地址与一键跳转按钮**。
-5. **自动开箱引擎（`chest.rs`）**：
-   - 独立原生线程，默认关闭，由界面开关（`set_auto_chest`）控制；
-   - 每轮重读 `GetWindowRgn`、x 重叠聚类、逐行剖面定位锚点、CSS 比例自校验；
-   - z 序遮挡检测（排除自身进程窗口与 `WS_EX_TRANSPARENT` 覆盖层）；
-   - 原生 `BitBlt` 抓取锚点框内缩 12% 采样，`warm/white` 双阈值判定就绪（未知一律不点）；
-   - 点击前 60 ms 区域稳定性校验、点击后 350 ms 效果验证，失败降频重试；
-   - 提权不足时状态置 `need-admin` 并 60 s 退避，界面提供【以管理员重启】；
-   - 稳态 30 分钟仅约 40 次唤醒，CPU ~0.005%。
-6. **前端无编译本地即开即看**：
+5. **前端无编译本地即开即看**：
    - 直接双击 `web/index.html` 即可在普通浏览器中体验完整 UI 与交互动效；
    - 控制台内置 `testNewVersionUI()` 快速测试钩子。
+6. **自动开箱 (v0.2.0 新增，v0.3.0 强化)**：
+   - 后台 UIA 精确匹配桌宠 `reward-btn` 宝箱按钮并标准 Invoke，全程零鼠标干涉、零焦点抢占；
+   - **v0.3.0 倒计时感知**：读取 `reward-countdown` 气泡 aria-label 剩余秒数，精准定时唤醒，
+     宝箱就绪后 ~1~2 秒内自动领取（替代 10 秒盲轮询，每 30 分钟周期仅 2~4 次 UIA 扫描）；
+   - 领取确认/回滚状态机（box_logic.rs 纯逻辑，BDD 全覆盖）：按钮数减少=成功可链式开下一箱，
+     未减少=回滚计数进入 5 分钟冷却；
+   - 面板卡片开关（localStorage 持久化）+ 实时状态看板（监测中/发现宝箱/开箱计数/冷却）；
+   - 状态文本写入带变化检测，500ms 轮询不再产生无谓 DOM 失效（交互零卡顿）。
 7. **双 Git 远端协同**：
    - GitHub: `origin` (`https://github.com/To0Ru/AutoTappo.git`)
    - Gitee: `gitee` (`git@gitee.com:To0Ru/AutoTappo.git`)
 
 ---
 
-## 6. 自动开箱已实现设计（`src-tauri/src/chest.rs`）
+## 6. 自动开箱功能 (Auto-Box Opening) — 已实现 (v0.2.0)
 
-> 技术依据全部见 **2.4 节**。本节只描述代码结构与状态机，避免与 2.4 重复。
+### 6.1 官方桌宠开箱机制逆向结论
 
-### 6.1 模块职责划分
+通过对 `WuwaTappo.exe` 内嵌前端资源（Tauri asset 表，明文键名 + brotli 值，可用 Node `zlib.brotliDecompressSync` 直接雕刻解包）的逆向分析确认：
 
-| 函数 | 职责 |
-| :-- | :-- |
-| `ensure_dpi_aware()` | 启动早期设置 `PER_MONITOR_AWARE_V2`，保证坐标是物理像素 |
-| `find_pet()` | `EnumWindows` 找 `DesktopCatInput`（输入层）+ `Tauri Window/Wuwa Tappo`（视觉层），并取窗口原点与 DPI |
-| `read_region(hwnd)` | `GetWindowRgn` + `GetRegionData` 解析出矩形列表（窗口相对） |
-| `cluster_by_x()` | 按 x 区间重叠的并查集聚类（多猫场景） |
-| `anchors_in_cluster()` | 逐行右边界剖面 → 平台 → 同一批行的本体右缘（众数）→ CSS 比例自校验 |
-| `z_order()` / `is_occluded()` | 只检查 z 序中位于桌宠之前的窗口，排除自身进程与 `WS_EX_TRANSPARENT` |
-| `capture()` / `classify()` | 原生 `BitBlt` + `GetDIBits` 抓小块，算 `warm/white` 比例判就绪 |
-| `post_click()` | `WM_MOUSEMOVE → WM_LBUTTONDOWN → WM_LBUTTONUP`，客户区坐标 |
-| `is_elevated()` / `relaunch_as_admin()` | 检测自身提权状态 / `ShellExecuteW("runas")` 重启 |
+1. **宝箱生成规则**：每累计 30 分钟活跃时间，宝箱槽生成一个宝箱；双槽（`left_treasure_chest` / `right_treasure_chest`）最多存 2 个，存满后活跃计时暂停；
+2. **领取条件**：登录账号 + 消耗 1,000 字符数（点数不足报 `code.70005`，无宝箱报 `code.70004`，冷却中报 `code.70006`）；
+3. **前端交互实现**：宝箱就绪时桌宠 WebView 内渲染 **`<button class="reward-btn">`**（左右槽各一），`onClick` 触发 `openChest(place, click_num)` → POST `api/frontend/chests/open`；
+4. **关键状态信号**：点击动画期间按钮类名临时附加 `reward-btn--press` / `reward-btn--open`，且按钮进入 `disabled`（前端单飞锁 `Co` 标志）；
+5. **官方 UIA 实测验证**：桌宠窗口标题 `Wuwa Tappo`（窗口类 `Tauri Window`），Chromium 将 CSS 类名暴露为 UIA `ClassName` 属性（实测 `settings-btn` 可被 .NET UIAutomation 枚举命中），即 `reward-btn` 按钮在 UIA 树中按类名可直接定位。
 
-### 6.2 状态机与时间预算
+### 6.2 实现方案（事件注入 · 方案 A 落地，v0.3.0 倒计时感知 + 多根发现）
 
-| 状态 | 触发条件 | 下一轮间隔 |
-| :-- | :-- | :-- |
-| `idle` | 开关关闭 | 500 ms |
-| `no-pet` / 区域为空 | 找不到桌宠 / 面板打开 / F9 隐藏 | 5 s |
-| `moving` | 60 ms 内区域哈希变化（用户拖拽） | 800 ms |
-| `no-chest` | 定位不到锚点（累计数不足） | 10 s |
-| `cooldown` | 像素判为冷却 | **30 s** |
-| 就绪 | 像素判为就绪 | 立即点击 → 点后验证 |
-| `opened` | 点后验证成功 | **29 min 45 s**（然后 2 s 细扫） |
-| `retry` | 点了但验证失败 | 5 s |
-| `occluded` | z 序被遮挡 | 2→5→10→30 s 退避 |
-| `need-admin` | `PostMessage` 返回 ERROR_ACCESS_DENIED | 60 s |
+采用**纯后台 UI Automation**，彻底避免方案 B 的前台激活与鼠标位移：
 
-### 6.3 资源红线（不得违反）
+- **发现（多根扫描）**：`EnumWindows` 按标题精确匹配 `Wuwa Tappo` → **顶层 + EnumChildWindows
+  逐子窗口**收集扫描根 → 对每个根 `ElementFromHandle` + 两次 `FindAllBuildCache(Descendants)`：
+  Button 条件找 `reward-btn`（缓存 ClassName/Name/IsEnabled），Image 条件找 `reward-countdown`
+  （UIA Name 即 aria-label 倒计时 "MM:SS"）；
+  ⚠️ **实机关键结论**：桌宠顶层窗口（Tauri/wry 宿主）的 WM_GETOBJECT **不转发** WebView2
+  内容提供者——原生 UIA 客户端从顶层元素只能读到空树（托管 .NET 客户端因聚合子窗口
+  提供者链而可见，易造成误判）；内容提供者挂在 WebView2 运行时进程（msedgewebview2.exe，
+  与宿主不同 pid）的 `Chrome_WidgetWin_1` / `Chrome_RenderWidgetHostHWND` 子窗口上。
+  只扫顶层 = 永远读不到就绪宝箱；
+- **触发**：类名**精确等于** `reward-btn`（排除 press/open 动画态）且 `IsEnabled` 为真 → `InvokePattern.Invoke()`，失败回退 `LegacyIAccessible.DoDefaultAction()`——等价 DOM click，零鼠标位移、零焦点抢占；
+- **调度（v0.3.0）**：决策引擎 `box_logic.rs` 纯函数 `decide(phase, scan, now)`——
+  Watching+Countdown(s) → 休眠 `s*1000+600ms`（>10 分钟分段校准）；Nothing → 8 秒重扫
+  （兼作树保活）；PendingVerify → 3.5 秒复查（按钮数减少=成功/链式下一箱，未减少=回滚+
+  冷却 5 分钟；动画态超 30 秒强制回滚）；确认成功后 8 秒链式复查（双槽连开）；
+  等待期 1 秒心跳保证开关/退出 ≤1.5 秒响应；
+- **树保活**：20 秒轻量 ping（仅子窗口根，顶层不作为死亡判据）保持 Chromium 无障碍树
+  存活；全部子窗口 ping 失败 → 3 秒快速唤醒重试（查询本身触发 Chromium 重建树），
+  连续 40 次失败降频 30 秒；
+- **状态同步**：`get_status` 返回 `auto_box_enabled / auto_box_opens / auto_box_status`（0 未开启 / 1 监测中 / 2 发现宝箱 / 3 开箱成功 / 4 冷却重试），前端 500ms 轮询渲染（带变化检测）；开关状态由 localStorage 持久化并经 `set_auto_box` IPC 同步原生线程；
+- **测试**：`src-tauri/tests/bdd_box_logic.rs` 23 条 Given/When/Then 全绿；实机 E2E 脚本
+  `local-e2e.ps1` 自动优先 pwsh7，UIA 驱动自身面板完成开关/挂机/退出闭环；
+  `probe-chest.ps1` 独立 .NET 探针交叉验证桌宠槽位状态。
 
-1. **每轮必须重读区域**（21 µs），绝不缓存——缓存会踩跨屏不一致的坑；
-2. **绝不可每轮截图**：只在判定要点击那一刻抓两个 62×44 小块（1~3 ms）；
-3. 循环内**无持续增长的分配**：每轮仅一次约 4 KB 的区域缓冲临时分配，捕获缓冲也仅在小块截图时申请；
-4. 线程全程 `sleep` 驱动，禁止忙等或自旋。
-
-### 6.4 安全红线（沿用 2.3 节）
-
-- 严禁伪造 `api/frontend/chests/open` 等 HTTP/jsonp 请求；
-- 只允许驱动官方 WebView 通过原生消息流执行真实点击；
-- 绝不移动真实鼠标指针（不使用 `SendInput` / `mouse_event` / `SetCursorPos`）。
+> 逆向解包与 UIA 验证脚本位于仓库外本地工作区 `..\_autotappo_analysis\`（严禁入库——含官方版权资源的解包产物）。
 
 ---
 
 ## 7. 开发者与 Agent 工作准则
 
-- **严格遵从用户 Git 指示**：未经用户明确指示，严禁执行 `git commit` 或 `git push`，一切开发与逆向产物仅在本地工作区流转；
 - **严禁提交垃圾文件**：严禁提交临时 Python、AHK、.bat 脚本或编译产物；
 - **保持 README.md 纯净**：`README.md` 仅包含用户关心的安装、使用和特色，技术与逆向细节统一沉淀在 `AGENTS.md`；
 - **多平台同步**：完成功能后，使用 `git push origin main && git push gitee main` 保持两端同步；

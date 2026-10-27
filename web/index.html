@@ -24,7 +24,7 @@
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
           <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
         </svg>
-        <span class="version-text">v0.1.0</span>
+        <span class="version-text">v0.3.0</span>
         <span class="update-dot" id="update-dot"></span>
       </button>
     </header>
@@ -33,7 +33,7 @@
     <section class="status-card">
       <div class="pulse-ring" id="status-ring"></div>
       <div class="status-content">
-        <span class="status-badge" id="status-badge">已暂停</span>
+        <span class="status-badge" id="status-badge" role="status">已暂停</span>
         <div class="sent-counter">
           <span class="counter-label">本次模拟点击</span>
           <div class="counter-row">
@@ -86,53 +86,30 @@
       </div>
     </div>
 
-    <!-- 自动开箱 -->
-    <section class="chest-card" id="chest-card">
-      <div class="chest-head">
-        <div class="chest-title-wrap">
-          <div class="chest-icon">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="21 8 21 21 3 21 3 8"></polyline>
-              <rect x="1" y="3" width="22" height="5"></rect>
-              <line x1="10" y1="12" x2="14" y2="12"></line>
-            </svg>
-          </div>
-          <div class="chest-text">
-            <div class="chest-title-row">
-              <strong class="chest-title">自动开箱</strong>
-              <span class="chest-badge" id="chest-badge">已关闭</span>
-            </div>
-            <p class="chest-desc" id="chest-desc">宝箱就绪后自动开启，不影响挂机</p>
-          </div>
+    <!-- 自动开箱卡片：后台 UIA 无鼠标触发，与连点引擎共用零干涉准则 -->
+    <div class="feature-preview-card" id="auto-box-card" title="桌宠宝箱就绪后自动领取开启（每箱消耗1,000字符数，需桌宠已登录账号）">
+      <div class="fp-left">
+        <div class="fp-icon-wrap">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="21 8 21 21 3 21 3 8"></polyline>
+            <rect x="1" y="3" width="22" height="5"></rect>
+            <line x1="10" y1="12" x2="14" y2="12"></line>
+          </svg>
         </div>
-        <button class="switch" id="chest-switch" role="switch" aria-checked="false" title="开启 / 关闭自动开箱">
-          <span class="switch-knob"></span>
+        <div class="fp-text">
+          <div class="fp-title-row">
+            <strong class="fp-title">自动开箱</strong>
+            <span class="fp-tag" id="auto-box-tag">未开启</span>
+          </div>
+          <p class="fp-desc" id="auto-box-desc" role="status">宝箱就绪自动领取 · 每箱消耗 1,000 字符数</p>
+        </div>
+      </div>
+      <div class="fp-status">
+        <button id="btn-auto-box" class="ab-toggle" type="button" aria-pressed="false" title="开启 / 关闭自动开箱">
+          <span class="ab-knob"></span>
         </button>
       </div>
-
-      <div class="chest-slots">
-        <div class="chest-slot" id="slot-left" data-state="idle">
-          <span class="slot-dot"></span>
-          <span class="slot-name">左宝箱</span>
-          <span class="slot-state">—</span>
-        </div>
-        <div class="chest-slot" id="slot-right" data-state="idle">
-          <span class="slot-dot"></span>
-          <span class="slot-name">右宝箱</span>
-          <span class="slot-state">—</span>
-        </div>
-      </div>
-
-      <div class="chest-foot">
-        <span class="chest-hint" id="chest-hint">待机中</span>
-        <span class="chest-count" id="chest-count">已开启 0 次</span>
-      </div>
-
-      <div class="chest-warn" id="chest-warn" hidden>
-        <span>开箱需要管理员权限</span>
-        <button class="chest-warn-btn" id="btn-elevate">以管理员重启</button>
-      </div>
-    </section>
+    </div>
 
     <!-- 底部控制栏 -->
     <footer class="app-footer">
@@ -157,7 +134,7 @@
         <div class="modal-body">
           <div class="version-row">
             <span class="v-label">当前运行版本</span>
-            <span class="v-val current" id="lbl-cur-version">v0.1.0</span>
+            <span class="v-val current" id="lbl-cur-version">v0.3.0</span>
           </div>
           <div class="version-row">
             <span class="v-label">最新发布版本</span>

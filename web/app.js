@@ -3,7 +3,7 @@
 (function () {
   "use strict";
 
-  const CURRENT_VERSION = "v0.1.0";
+  const CURRENT_VERSION = "v0.3.0";
   const GITEE_API_URL = "https://gitee.com/api/v5/repos/To0Ru/AutoTappo/releases/latest";
   const GITHUB_API_URL = "https://api.github.com/repos/To0Ru/AutoTappo/releases/latest";
 
@@ -36,6 +36,19 @@
   const lblHotkey = document.getElementById("lbl-hotkey");
   const hotkeyTip = document.getElementById("hotkey-tip");
 
+  // 自动开箱 DOM
+  const autoBoxCard = document.getElementById("auto-box-card");
+  const autoBoxTag = document.getElementById("auto-box-tag");
+  const autoBoxDesc = document.getElementById("auto-box-desc");
+  const btnAutoBox = document.getElementById("btn-auto-box");
+
+  // 自动开箱状态码（与 Rust box_opener.rs 同步）
+  const AB_IDLE = 0;
+  const AB_WATCHING = 1;
+  const AB_FOUND = 2;
+  const AB_OPENED = 3;
+  const AB_BACKOFF = 4;
+
   // Modal 弹窗元素
   const updateModal = document.getElementById("update-modal");
   const btnModalClose = document.getElementById("btn-modal-close");
@@ -66,10 +79,20 @@
   let currentHotkeyVK = parseInt(localStorage.getItem("autotappo_hotkey_vk"), 10) || 0x75;
   let isRecordingHotkey = false;
 
+  // 自动开箱状态（localStorage 持久化，与 Rust 原生线程同步）
+  let autoBoxEnabled = localStorage.getItem("autotappo_autobox") === "1";
+  let autoBoxStatus = AB_IDLE;
+  let autoBoxOpens = 0;
+
   const versionText = document.querySelector(".version-text");
   if (versionText) versionText.textContent = CURRENT_VERSION;
   if (lblCurVersion) lblCurVersion.textContent = CURRENT_VERSION;
   if (lblHotkey) lblHotkey.textContent = currentHotkeyName;
+
+  // 仅在内容变化时写入 DOM：500ms 状态轮询下避免无谓的节点替换与样式失效（微卡顿来源）
+  function setText(el, text) {
+    if (el && el.textContent !== text) el.textContent = text;
+  }
 
   // 更新主界面 UI
   function updateUI(status) {
@@ -82,29 +105,27 @@
     // 1. 运行状态徽章
     if (statusBadge) {
       if (currentRunning) {
-        statusBadge.textContent = "运行中";
+        setText(statusBadge, "运行中");
         statusBadge.classList.add("running");
       } else {
-        statusBadge.textContent = "已暂停";
+        setText(statusBadge, "已暂停");
         statusBadge.classList.remove("running");
       }
     }
 
     // 2. 模拟点击计数
-    if (counterValue) {
-      counterValue.textContent = localSentCount.toLocaleString();
-    }
+    setText(counterValue, localSentCount.toLocaleString());
 
     // 3. 大按钮状态
     if (btnToggle && btnToggleText && btnToggleIcon) {
       if (currentRunning) {
         btnToggle.classList.add("running");
-        btnToggleIcon.textContent = "⏸";
-        btnToggleText.textContent = `暂停挂机 (${currentHotkeyName})`;
+        setText(btnToggleIcon, "⏸");
+        setText(btnToggleText, `暂停挂机 (${currentHotkeyName})`);
       } else {
         btnToggle.classList.remove("running");
-        btnToggleIcon.textContent = "▶";
-        btnToggleText.textContent = `开始挂机 (${currentHotkeyName})`;
+        setText(btnToggleIcon, "▶");
+        setText(btnToggleText, `开始挂机 (${currentHotkeyName})`);
       }
     }
 
@@ -117,6 +138,55 @@
         btn.classList.remove("active");
       }
     });
+
+    // 5. 自动开箱状态看板
+    if (typeof status.auto_box_enabled === "boolean") {
+      autoBoxEnabled = status.auto_box_enabled;
+    }
+    if (typeof status.auto_box_status === "number") {
+      autoBoxStatus = status.auto_box_status;
+    }
+    if (typeof status.auto_box_opens === "number") {
+      autoBoxOpens = status.auto_box_opens;
+    }
+    renderAutoBoxUI();
+  }
+
+  // 自动开箱卡片渲染
+  function renderAutoBoxUI() {
+    if (btnAutoBox) {
+      btnAutoBox.classList.toggle("on", autoBoxEnabled);
+      btnAutoBox.setAttribute("aria-pressed", autoBoxEnabled ? "true" : "false");
+    }
+    if (autoBoxCard) {
+      autoBoxCard.classList.toggle("active", autoBoxEnabled);
+    }
+    if (autoBoxTag) {
+      setText(autoBoxTag, autoBoxEnabled ? "运行中" : "未开启");
+    }
+    if (autoBoxDesc) {
+      let desc;
+      if (!autoBoxEnabled) {
+        desc = "宝箱就绪自动领取 · 每箱消耗 1,000 字符数";
+      } else {
+        switch (autoBoxStatus) {
+          case AB_FOUND:
+            desc = "发现就绪宝箱，正在开启…";
+            break;
+          case AB_OPENED:
+            desc = `监测中 · 已自动开箱 ${autoBoxOpens.toLocaleString()} 次`;
+            break;
+          case AB_BACKOFF:
+            desc = "点数不足或暂不可开，稍后自动重试…";
+            break;
+          case AB_WATCHING:
+          default:
+            desc = "监测中，发现宝箱将自动开启…";
+            break;
+        }
+      }
+      setText(autoBoxDesc, desc);
+    }
   }
 
   // 轮询同步状态
@@ -146,9 +216,18 @@
       previewInterval = setInterval(() => {
         if (currentRunning) {
           localSentCount += 1;
-          if (counterValue) counterValue.textContent = localSentCount.toLocaleString();
+          setText(counterValue, localSentCount.toLocaleString());
         }
       }, speedIntervals[currentSpeed] || 100);
+
+      // 自动开箱预览模拟：开启后约 8 秒模拟一次成功开箱
+      setInterval(() => {
+        if (autoBoxEnabled) {
+          autoBoxOpens += 1;
+          autoBoxStatus = AB_OPENED;
+          renderAutoBoxUI();
+        }
+      }, 8000);
     }
     startPreviewLoop();
   }
@@ -209,6 +288,33 @@
       }
     });
   });
+
+  if (btnAutoBox) {
+    btnAutoBox.addEventListener("click", async () => {
+      autoBoxEnabled = !autoBoxEnabled;
+      localStorage.setItem("autotappo_autobox", autoBoxEnabled ? "1" : "0");
+      autoBoxStatus = autoBoxEnabled ? AB_WATCHING : AB_IDLE;
+      renderAutoBoxUI();
+
+      if (isTauri) {
+        try {
+          await invoke("set_auto_box", { enabled: autoBoxEnabled });
+        } catch (err) {
+          console.error("Failed to set auto box:", err);
+        }
+      } else {
+        console.info("[Browser Preview Mode] 自动开箱:", autoBoxEnabled ? "开启" : "关闭");
+      }
+    });
+  }
+
+  // 启动时把持久化的开关状态同步给原生线程
+  if (isTauri && autoBoxEnabled) {
+    invoke("set_auto_box", { enabled: true }).catch((err) => {
+      console.error("Failed to restore auto box state:", err);
+    });
+  }
+  renderAutoBoxUI();
 
   const hideWindow = async () => {
     if (isTauri) {
@@ -517,132 +623,6 @@
     }
   });
   triggerAutoCheck();
-
-  // ==================== 自动开箱 ====================
-  const chestCard = document.getElementById("chest-card");
-  const chestSwitch = document.getElementById("chest-switch");
-  const chestBadge = document.getElementById("chest-badge");
-  const chestHint = document.getElementById("chest-hint");
-  const chestCount = document.getElementById("chest-count");
-  const chestWarn = document.getElementById("chest-warn");
-  const btnElevate = document.getElementById("btn-elevate");
-  const slotLeft = document.getElementById("slot-left");
-  const slotRight = document.getElementById("slot-right");
-
-  // 默认：正式版关闭，浏览器预览模式打开（方便直接双击查看效果）
-  const storedChest = localStorage.getItem("autotappo.autoChest");
-  let autoChest = (storedChest !== null ? storedChest : isTauri ? "0" : "1") === "1";
-
-  function renderChestSwitch() {
-    if (!chestSwitch) return;
-    chestSwitch.setAttribute("aria-checked", autoChest ? "true" : "false");
-    chestCard.classList.toggle("is-on", autoChest);
-    chestBadge.textContent = autoChest ? "已启用" : "已关闭";
-  }
-
-  function stateTag(text) {
-    const t = (text || "").trim();
-    if (!t || t === "-") return ["idle", "—"];
-    if (t.indexOf("就绪") >= 0) return ["ready", "就绪"];
-    if (t.indexOf("冷却") >= 0) return ["cooldown", "冷却中"];
-    if (t.indexOf("被遮挡") >= 0) return ["cooldown", "被遮挡"];
-    if (t.indexOf("无法判定") >= 0 || t.indexOf("截取失败") >= 0) return ["idle", "识别中"];
-    return ["idle", t];
-  }
-
-  function applySlot(el, text) {
-    if (!el) return;
-    const res = stateTag(text);
-    el.dataset.state = res[0];
-    const stateEl = el.querySelector(".slot-state");
-    if (stateEl) stateEl.textContent = res[1];
-  }
-
-  const STATE_HINT = {
-    idle: "待机中",
-    "no-pet": "未检测到桌宠，请先启动鸣潮桌宠",
-    "no-chest": "暂无宝箱，继续挂机即可解锁",
-    cooldown: "冷却中，到点自动开启",
-    occluded: "桌宠被其他窗口遮挡，等待中",
-    moving: "桌宠正在移动，稍后重试",
-    unknown: "画面识别异常，本轮跳过",
-    opened: "刚刚开启了一个宝箱",
-    retry: "点击未生效，稍后重试",
-    "need-admin": "需要管理员权限才能开箱",
-    error: "点击投递失败，稍后重试",
-    stopped: "已停止",
-  };
-
-  function applyChestStatus(s) {
-    if (!s) return;
-    if (typeof s.enabled === "boolean" && s.enabled !== autoChest) {
-      autoChest = s.enabled;
-      renderChestSwitch();
-    }
-    applySlot(slotLeft, s.left);
-    applySlot(slotRight, s.right);
-    if (chestHint) chestHint.textContent = STATE_HINT[s.state] || s.detail || "待机中";
-    if (chestCount) chestCount.textContent = `已开启 ${s.opens_ok || 0} 次`;
-    if (chestWarn) chestWarn.hidden = !(autoChest && s.elevated === false);
-  }
-
-  async function pollChestStatus() {
-    if (!autoChest) return;
-    if (!isTauri) {
-      applyChestStatus({
-        enabled: true,
-        elevated: false,
-        state: "cooldown",
-        detail: "冷却中",
-        left: "冷却中",
-        right: "就绪",
-        opens_ok: 3,
-        opens_failed: 0,
-      });
-      return;
-    }
-    try {
-      const s = await invoke("get_chest_status");
-      applyChestStatus(s);
-    } catch (e) {
-      /* 静默失败，不打扰用户 */
-    }
-  }
-
-  if (chestSwitch) {
-    chestSwitch.addEventListener("click", async () => {
-      autoChest = !autoChest;
-      localStorage.setItem("autotappo.autoChest", autoChest ? "1" : "0");
-      renderChestSwitch();
-      if (chestWarn) chestWarn.hidden = true;
-      if (isTauri) {
-        try {
-          await invoke("set_auto_chest", { enabled: autoChest });
-        } catch (e) {}
-      }
-      if (autoChest) pollChestStatus();
-    });
-  }
-
-  if (btnElevate) {
-    btnElevate.addEventListener("click", async () => {
-      if (!isTauri) {
-        alert("浏览器预览模式：正式版会以管理员权限重启程序");
-        return;
-      }
-      try {
-        await invoke("relaunch_as_admin");
-      } catch (e) {}
-    });
-  }
-
-  renderChestSwitch();
-  if (isTauri) {
-    invoke("set_auto_chest", { enabled: autoChest }).catch(() => {});
-    setInterval(pollChestStatus, 1000);
-  } else {
-    pollChestStatus();
-  }
 
   // 启动状态轮询
   pollStatus();

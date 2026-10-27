@@ -12,6 +12,9 @@ pub struct AppStatusResponse {
     pub speed_mode: u8,
     pub total_sent: u64,
     pub hotkey_vk: i32,
+    pub auto_box_enabled: bool,
+    pub auto_box_opens: u64,
+    pub auto_box_status: u8,
 }
 
 #[tauri::command]
@@ -22,6 +25,9 @@ pub fn get_status(state: State<'_, AppState>) -> AppStatusResponse {
         speed_mode: inner.clicker.speed_mode.load(Ordering::Relaxed),
         total_sent: inner.clicker.total_sent.load(Ordering::Relaxed),
         hotkey_vk: inner.clicker.hotkey_vk.load(Ordering::Relaxed),
+        auto_box_enabled: inner.box_opener.enabled.load(Ordering::Relaxed),
+        auto_box_opens: inner.box_opener.opens.load(Ordering::Relaxed),
+        auto_box_status: inner.box_opener.status.load(Ordering::Relaxed),
     }
 }
 
@@ -63,6 +69,13 @@ pub fn reset_sent_count(state: State<'_, AppState>) {
 }
 
 #[tauri::command]
+pub fn set_auto_box(state: State<'_, AppState>, enabled: bool) {
+    let inner = &state.0;
+    inner.box_opener.enabled.store(enabled, Ordering::SeqCst);
+    println!("[AutoTappo] 🎁 自动开箱: {}", if enabled { "已开启" } else { "已关闭" });
+}
+
+#[tauri::command]
 pub fn minimize_to_tray(app: AppHandle) {
     let _ = window::close(&app);
 }
@@ -70,34 +83,6 @@ pub fn minimize_to_tray(app: AppHandle) {
 #[tauri::command]
 pub fn quit_app(state: State<'_, AppState>, app: AppHandle) {
     let inner = &state.0;
-    inner.shutting_down.store(true, Ordering::SeqCst);
-    inner.clicker.shutdown.store(true, Ordering::SeqCst);
-    inner.chest.shutdown.store(true, Ordering::SeqCst);
+    crate::request_shutdown(inner);
     app.exit(0);
-}
-
-// ---------------- 自动开箱 ----------------
-
-/// 读取自动开箱引擎的实时状态（前端轮询用）
-#[tauri::command]
-pub fn get_chest_status(state: State<'_, AppState>) -> crate::chest::ChestSnapshot {
-    state.0.chest.status()
-}
-
-/// 开关自动开箱
-#[tauri::command]
-pub fn set_auto_chest(state: State<'_, AppState>, enabled: bool) {
-    state.0.chest.set_enabled(enabled);
-}
-
-/// 以管理员身份重启（开箱需要与官方桌宠同等完整性）
-#[tauri::command]
-pub fn relaunch_as_admin(state: State<'_, AppState>, app: AppHandle) -> Result<(), String> {
-    let inner = &state.0;
-    crate::chest::relaunch_as_admin()?;
-    inner.shutting_down.store(true, Ordering::SeqCst);
-    inner.clicker.shutdown.store(true, Ordering::SeqCst);
-    inner.chest.shutdown.store(true, Ordering::SeqCst);
-    app.exit(0);
-    Ok(())
 }
