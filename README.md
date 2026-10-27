@@ -10,6 +10,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/Echoing-web/AutoTappo/releases/latest"><img src="https://img.shields.io/badge/Version-v0.3.0-8B5CF6?logo=github" alt="Version"></a>
   <img src="https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D4?logo=windows" alt="Platform">
   <img src="https://img.shields.io/badge/Release-免安装绿色单文件-brightgreen" alt="Release">
   <img src="https://img.shields.io/badge/License-MIT-orange" alt="License">
@@ -54,7 +55,7 @@
 
 ## 📥 下载安装
 
-前往本仓库的 [**Releases**](https://github.com/To0Ru/AutoTappo/releases/latest) 页面下载最新版本：
+前往本仓库的 [**Releases**](https://github.com/Echoing-web/AutoTappo/releases/latest) 页面下载最新版本：
 
 | 文件 | 类型 | 说明 |
 | :--- | :---: | :--- |
@@ -98,8 +99,8 @@
 ### 2. 获取代码与安装 Tauri CLI
 ```bash
 # 克隆仓库
-git clone https://github.com/To0Ru/AutoTappo.git
-cd autotappo
+git clone https://github.com/Echoing-web/AutoTappo.git
+cd AutoTappo
 
 # 安装 Tauri v2 命令行工具（如尚未安装）
 cargo install tauri-cli --version "^2.0"
@@ -137,7 +138,26 @@ cargo tauri build
 **不会。** 自动开箱通过系统辅助功能接口（UI Automation）在后台直接触发桌宠内的开箱按钮，与连点引擎一样零鼠标位移、零焦点抢占，你可以继续正常使用电脑。
 
 #### Q: 需要以管理员身份运行吗？
-**通常不需要**。如果你的鸣潮桌宠安装在系统受保护目录下并以管理员权限启动，建议本程序也“以管理员身份运行”，以保证后台消息顺畅投递。
+**通常不需要**。实测桌宠默认以普通权限运行，本程序无需管理员即可完成全部后台连点与自动开箱。仅当你的桌宠以特殊方式启动导致后台消息投递异常时，再尝试以管理员身份运行本程序。
+
+---
+
+## 📦 更新日志
+
+### v0.3.0（当前版本）
+- 🎁 **自动开箱**：桌宠宝箱就绪后 1~2 秒内后台自动领取开启（每 30 分钟活跃时间产出一个，双槽自动连开）；
+- ⏱ **倒计时感知**：自动读取宝箱刷新倒计时精准唤醒，替代盲目轮询，CPU 占用近乎为零；
+- 🛡 **智能防重入**：领取确认/回滚/冷却状态机，点数不足时自动冷却重试，不会刷错误提示；
+- 📉 **体积与负载优化**：安装包体积 -6.8%，运行负载 CPU ≈0%、内存 ≈32MB。
+
+<details>
+<summary>v0.2.0 及更早</summary>
+
+- v0.2.0：自动开箱首版（UIA 精确触发 + 防重入 + 冷却）；
+- v0.1.0：后台静默连点、托盘常驻、速度档位、全局热键、更新检测。
+</details>
+
+> 完整发布产物见 [Releases](https://github.com/Echoing-web/AutoTappo/releases) 页面。
 
 ---
 
