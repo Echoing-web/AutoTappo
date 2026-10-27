@@ -126,11 +126,9 @@ autotappo/
      未减少=回滚计数进入 5 分钟冷却；
    - 面板卡片开关（localStorage 持久化）+ 实时状态看板（监测中/发现宝箱/开箱计数/冷却）；
    - 状态文本写入带变化检测，500ms 轮询不再产生无谓 DOM 失效（交互零卡顿）。
-7. **Git 远端协同（当前实际）**：
-   - `origin` = `https://github.com/Echoing-web/AutoTappo.git`（本仓库，To0Ru/AutoTappo 的 fork）；
-   - 上游原仓库 = `https://github.com/To0Ru/AutoTappo.git`（如需向其贡献，另加 `upstream` 远端并发起跨仓库 PR）；
-   - 注意：本仓库为 fork，Actions 的 push/tag 自动触发被门禁拦截——发版用
-     `gh workflow run build.yml --ref <tag>` 在 tag ref 上手动分发即可激活发布步骤。
+7. **双 Git 远端协同**：
+   - GitHub: `origin` (`https://github.com/To0Ru/AutoTappo.git`)
+   - Gitee: `gitee` (`git@gitee.com:To0Ru/AutoTappo.git`)
 
 ---
 

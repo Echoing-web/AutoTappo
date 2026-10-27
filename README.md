@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Echoing-web/AutoTappo/releases/latest"><img src="https://img.shields.io/badge/Version-v0.3.0-8B5CF6?logo=github" alt="Version"></a>
+  <a href="https://github.com/To0Ru/AutoTappo/releases/latest"><img src="https://img.shields.io/badge/Version-v0.3.0-8B5CF6?logo=github" alt="Version"></a>
   <img src="https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D4?logo=windows" alt="Platform">
   <img src="https://img.shields.io/badge/Release-免安装绿色单文件-brightgreen" alt="Release">
   <img src="https://img.shields.io/badge/License-MIT-orange" alt="License">
@@ -55,7 +55,7 @@
 
 ## 📥 下载安装
 
-前往本仓库的 [**Releases**](https://github.com/Echoing-web/AutoTappo/releases/latest) 页面下载最新版本：
+前往本仓库的 [**Releases**](https://github.com/To0Ru/AutoTappo/releases/latest) 页面下载最新版本：
 
 | 文件 | 类型 | 说明 |
 | :--- | :---: | :--- |
@@ -99,7 +99,7 @@
 ### 2. 获取代码与安装 Tauri CLI
 ```bash
 # 克隆仓库
-git clone https://github.com/Echoing-web/AutoTappo.git
+git clone https://github.com/To0Ru/AutoTappo.git
 cd AutoTappo
 
 # 安装 Tauri v2 命令行工具（如尚未安装）
@@ -157,7 +157,7 @@ cargo tauri build
 - v0.1.0：后台静默连点、托盘常驻、速度档位、全局热键、更新检测。
 </details>
 
-> 完整发布产物见 [Releases](https://github.com/Echoing-web/AutoTappo/releases) 页面。
+> 完整发布产物见 [Releases](https://github.com/To0Ru/AutoTappo/releases) 页面。
 
 ---
 
