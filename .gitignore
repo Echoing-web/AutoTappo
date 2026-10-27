@@ -1,31 +1,50 @@
-# ---- 临时测试脚本与截图 ---- #
+# ============================================================
+#  AutoTappo .gitignore
+#  原则：仓库只保留源码与发布必需资源；逆向证据、截图、临时原型一律本地存放
+# ============================================================
+
+# ---- 逆向工作区（截图 / 提取的官方资源 / 临时脚本，仅本地分析用） ----
+/research/
+
+# ---- 临时脚本 ----
 *.py
 *.pyc
 __pycache__/
-*.bat
 *.ahk
+*.bat
 *.dat
 *.log
 *.tmp
+
+# ---- 根目录临时截图（保留被跟踪的 logo.png） ----
+/*.png
+!/logo.png
 pet_*.png
 batch_*.png
 counter_*.png
 mon1_*.png
-all_screens.png
+monitor*.png
+rgn_*.png
+all_screens*.png
+full_desktop*.png
+wuwa_tappo_*.png
+chest*.png
+reward_*.png
+current_clock.png
 now.png
 
-# ---- Rust 构建产物 ---- #
+# ---- Rust 构建产物 ----
 target/
 src-tauri/target/
 src-tauri/gen/
 **/*.rs.bk
 
-# ---- 前端产物 (如有) ---- #
+# ---- 前端产物 (如有) ----
 node_modules/
 dist/
 .vite/
 
-# ---- 操作系统与编辑器临时文件 ---- #
+# ---- 操作系统与编辑器临时文件 ----
 .DS_Store
 Thumbs.db
 *.swp

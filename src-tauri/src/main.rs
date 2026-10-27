@@ -1,6 +1,7 @@
 // Release 发布版禁用 Windows 控制台黑框
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod chest;
 mod clicker;
 mod commands;
 mod tray;
@@ -11,11 +12,13 @@ use std::sync::{Arc, Mutex};
 use tauri::tray::TrayIcon;
 use tauri::Manager;
 
+use crate::chest::ChestController;
 use crate::clicker::ClickerController;
 
 /// 全局共享状态
 pub struct Inner {
     pub clicker: Arc<ClickerController>,
+    pub chest: Arc<ChestController>,
     pub tray: Mutex<Option<TrayIcon>>,
     pub tray_ok: AtomicBool,
     pub shutting_down: AtomicBool,
@@ -24,14 +27,22 @@ pub struct Inner {
 pub struct AppState(pub Arc<Inner>);
 
 fn main() {
+    // 多屏 / 高 DPI 下必须拿到物理像素坐标，区域与截图像素才能对齐
+    chest::ensure_dpi_aware();
+
     let app = tauri::Builder::default()
         .setup(|app| {
             let clicker = Arc::new(ClickerController::new());
             // 启动后台静默连点原生工作线程
             clicker.start_worker();
 
+            // 自动开箱引擎：独立原生线程，默认关闭
+            let chest = Arc::new(ChestController::new());
+            chest.start_worker();
+
             let inner = Arc::new(Inner {
                 clicker,
+                chest,
                 tray: Mutex::new(None),
                 tray_ok: AtomicBool::new(false),
                 shutting_down: AtomicBool::new(false),
@@ -78,6 +89,9 @@ fn main() {
             commands::reset_sent_count,
             commands::minimize_to_tray,
             commands::quit_app,
+            commands::get_chest_status,
+            commands::set_auto_chest,
+            commands::relaunch_as_admin,
         ])
         .build(tauri::generate_context!())
         .expect("AutoTappo 启动失败");

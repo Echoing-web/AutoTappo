@@ -86,28 +86,53 @@
       </div>
     </div>
 
-    <!-- 待支持功能卡片：自动开箱 -->
-    <div class="feature-preview-card" title="自动开箱功能将在后续版本更新中上线">
-      <div class="fp-left">
-        <div class="fp-icon-wrap">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="21 8 21 21 3 21 3 8"></polyline>
-            <rect x="1" y="3" width="22" height="5"></rect>
-            <line x1="10" y1="12" x2="14" y2="12"></line>
-          </svg>
-        </div>
-        <div class="fp-text">
-          <div class="fp-title-row">
-            <strong class="fp-title">自动开箱</strong>
-            <span class="fp-tag">待支持</span>
+    <!-- 自动开箱 -->
+    <section class="chest-card" id="chest-card">
+      <div class="chest-head">
+        <div class="chest-title-wrap">
+          <div class="chest-icon">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="21 8 21 21 3 21 3 8"></polyline>
+              <rect x="1" y="3" width="22" height="5"></rect>
+              <line x1="10" y1="12" x2="14" y2="12"></line>
+            </svg>
           </div>
-          <p class="fp-desc">满额自动开箱抽取表情与配件，后续版本上线</p>
+          <div class="chest-text">
+            <div class="chest-title-row">
+              <strong class="chest-title">自动开箱</strong>
+              <span class="chest-badge" id="chest-badge">已关闭</span>
+            </div>
+            <p class="chest-desc" id="chest-desc">宝箱就绪后自动开启，不影响挂机</p>
+          </div>
+        </div>
+        <button class="switch" id="chest-switch" role="switch" aria-checked="false" title="开启 / 关闭自动开箱">
+          <span class="switch-knob"></span>
+        </button>
+      </div>
+
+      <div class="chest-slots">
+        <div class="chest-slot" id="slot-left" data-state="idle">
+          <span class="slot-dot"></span>
+          <span class="slot-name">左宝箱</span>
+          <span class="slot-state">—</span>
+        </div>
+        <div class="chest-slot" id="slot-right" data-state="idle">
+          <span class="slot-dot"></span>
+          <span class="slot-name">右宝箱</span>
+          <span class="slot-state">—</span>
         </div>
       </div>
-      <div class="fp-status">
-        <span class="fp-lock">规划中</span>
+
+      <div class="chest-foot">
+        <span class="chest-hint" id="chest-hint">待机中</span>
+        <span class="chest-count" id="chest-count">已开启 0 次</span>
       </div>
-    </div>
+
+      <div class="chest-warn" id="chest-warn" hidden>
+        <span>开箱需要管理员权限</span>
+        <button class="chest-warn-btn" id="btn-elevate">以管理员重启</button>
+      </div>
+    </section>
 
     <!-- 底部控制栏 -->
     <footer class="app-footer">

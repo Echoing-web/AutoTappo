@@ -23,8 +23,8 @@ pub fn ensure(app: &AppHandle) -> tauri::Result<()> {
 pub fn open(app: &AppHandle) -> tauri::Result<()> {
     let w = WebviewWindowBuilder::new(app, LABEL, WebviewUrl::default())
         .title("AutoTappo · 鸣潮桌宠挂机助手")
-        .inner_size(420.0, 580.0)
-        .min_inner_size(380.0, 500.0)
+        .inner_size(452.0, 620.0)
+        .min_inner_size(420.0, 560.0)
         .resizable(false)
         .center()
         .build()?;

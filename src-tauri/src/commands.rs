@@ -72,5 +72,32 @@ pub fn quit_app(state: State<'_, AppState>, app: AppHandle) {
     let inner = &state.0;
     inner.shutting_down.store(true, Ordering::SeqCst);
     inner.clicker.shutdown.store(true, Ordering::SeqCst);
+    inner.chest.shutdown.store(true, Ordering::SeqCst);
     app.exit(0);
+}
+
+// ---------------- 自动开箱 ----------------
+
+/// 读取自动开箱引擎的实时状态（前端轮询用）
+#[tauri::command]
+pub fn get_chest_status(state: State<'_, AppState>) -> crate::chest::ChestSnapshot {
+    state.0.chest.status()
+}
+
+/// 开关自动开箱
+#[tauri::command]
+pub fn set_auto_chest(state: State<'_, AppState>, enabled: bool) {
+    state.0.chest.set_enabled(enabled);
+}
+
+/// 以管理员身份重启（开箱需要与官方桌宠同等完整性）
+#[tauri::command]
+pub fn relaunch_as_admin(state: State<'_, AppState>, app: AppHandle) -> Result<(), String> {
+    let inner = &state.0;
+    crate::chest::relaunch_as_admin()?;
+    inner.shutting_down.store(true, Ordering::SeqCst);
+    inner.clicker.shutdown.store(true, Ordering::SeqCst);
+    inner.chest.shutdown.store(true, Ordering::SeqCst);
+    app.exit(0);
+    Ok(())
 }
